@@ -7,3 +7,5 @@ logs/
 .DS_Store
 coverage/
 .nyc_output/
+*.sqlite
+database.sqlite
