@@ -5,6 +5,110 @@
 @tailwind components;
 @tailwind utilities;
 
+// ==========================================
+// BUTTON COMPONENT CLASSES
+// ==========================================
+@layer components {
+
+  // Primary button
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply font-semibold text-sm;
+    @apply px-4 py-3 rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply active:scale-[0.98];
+    @apply bg-primary-600 text-white;
+    @apply hover:bg-primary-700;
+    @apply focus-visible:ring-primary-500;
+    @apply shadow-sm hover:shadow-md;
+    @apply dark:bg-primary-500 dark:hover:bg-primary-600;
+  }
+
+  // Secondary button
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply font-semibold text-sm;
+    @apply px-4 py-3 rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply active:scale-[0.98];
+    @apply bg-white text-slate-700;
+    @apply border border-slate-300;
+    @apply hover:bg-secondary-50 hover:border-slate-400;
+    @apply focus-visible:ring-slate-500;
+    @apply dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600;
+    @apply dark:hover:bg-slate-700;
+  }
+
+  // Danger button
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply font-semibold text-sm;
+    @apply px-4 py-3 rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply active:scale-[0.98];
+    @apply bg-danger-600 text-white;
+    @apply hover:bg-danger-700;
+    @apply focus-visible:ring-danger-500;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  // Success button
+  .btn-success {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply font-semibold text-sm;
+    @apply px-4 py-3 rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply active:scale-[0.98];
+    @apply bg-success-600 text-white;
+    @apply hover:bg-success-700;
+    @apply focus-visible:ring-success-500;
+    @apply shadow-sm hover:shadow-md;
+  }
+
+  // Ghost button
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2;
+    @apply font-semibold text-sm;
+    @apply px-4 py-3 rounded-lg;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply active:scale-[0.98];
+    @apply bg-transparent text-slate-700;
+    @apply hover:bg-secondary-100;
+    @apply focus-visible:ring-slate-500;
+    @apply dark:text-slate-300 dark:hover:bg-slate-800;
+  }
+
+  // Icon button
+  .btn-icon {
+    @apply inline-flex items-center justify-center;
+    @apply p-2 rounded-lg;
+    @apply text-slate-500;
+    @apply hover:bg-slate-100 hover:text-slate-700;
+    @apply transition-all duration-200;
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2;
+    @apply dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200;
+  }
+
+  // Link-style button
+  .btn-link {
+    @apply inline-flex items-center gap-1;
+    @apply text-primary-600 font-medium text-sm;
+    @apply hover:text-primary-700 hover:underline;
+    @apply transition-colors duration-200;
+    @apply dark:text-primary-400 dark:hover:text-primary-300;
+  }
+}
+
 // Include essential Material core (needed for some logic, but we'll manually style)
 @include mat.core();
 

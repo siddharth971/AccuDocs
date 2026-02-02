@@ -39,10 +39,7 @@ import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confir
         </div>
         @if (authService.isAdmin()) {
           <input type="file" #fileInput (change)="onFileSelected($any($event))" hidden>
-          <button 
-            (click)="fileInput.click()"
-            class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-          >
+          <button (click)="fileInput.click()" class="btn-primary">
             <mat-icon class="text-xl">cloud_upload</mat-icon>
             Upload Document
           </button>

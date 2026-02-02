@@ -1,19 +1,11 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatListModule } from '@angular/material/list';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatDividerModule } from '@angular/material/divider';
 import { ClientService, Client } from '@core/services/client.service';
-import { DocumentService } from '@core/services/document.service';
 import { NotificationService } from '@core/services/notification.service';
-import { LayoutComponent } from '@shared/components/layout/layout.component';
 
 @Component({
   selector: 'app-client-detail',
@@ -21,229 +13,130 @@ import { LayoutComponent } from '@shared/components/layout/layout.component';
   imports: [
     CommonModule,
     RouterLink,
-    MatCardModule,
-    MatButtonModule,
     MatIconModule,
-    MatTabsModule,
-    MatListModule,
-    MatChipsModule,
     MatProgressSpinnerModule,
     MatMenuModule,
-    MatDividerModule,
-    LayoutComponent,
   ],
   template: `
-    <app-layout>
-      <div class="detail-container fade-in">
-        @if (isLoading()) {
-          <div class="loading-state">
-            <mat-spinner diameter="40"></mat-spinner>
-          </div>
-        } @else if (client()) {
-          <header class="page-header">
-            <div class="header-left">
-              <button mat-icon-button routerLink="/clients">
-                <mat-icon>arrow_back</mat-icon>
-              </button>
-              <div>
-                <h1>{{ client()?.user?.name }}</h1>
-                <div class="client-meta">
-                  <mat-chip class="code-chip">{{ client()?.code }}</mat-chip>
-                  <mat-chip [class]="client()?.user?.isActive ? 'active' : 'inactive'">
-                    {{ client()?.user?.isActive ? 'Active' : 'Inactive' }}
-                  </mat-chip>
-                </div>
+    <div class="w-full space-y-6">
+      @if (isLoading()) {
+        <div class="flex flex-col items-center justify-center py-20">
+          <mat-spinner diameter="40"></mat-spinner>
+          <p class="mt-4 text-text-secondary">Loading client details...</p>
+        </div>
+      } @else if (client()) {
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div class="flex items-start gap-4">
+            <a 
+              routerLink="/clients" 
+              class="p-2 rounded-lg bg-white dark:bg-slate-800 border border-border-color hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+            >
+              <mat-icon class="text-slate-600 dark:text-slate-300">arrow_back</mat-icon>
+            </a>
+            <div>
+              <h1 class="text-2xl font-bold text-text-primary">{{ client()?.user?.name }}</h1>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="px-3 py-1 text-sm font-mono font-semibold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full">
+                  {{ client()?.code }}
+                </span>
+                <span 
+                  [class]="client()?.user?.isActive 
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'"
+                  class="px-3 py-1 text-sm font-semibold rounded-full"
+                >
+                  {{ client()?.user?.isActive ? 'Active' : 'Inactive' }}
+                </span>
               </div>
             </div>
-            <div class="header-actions">
-              <button mat-stroked-button [routerLink]="['edit']">
-                <mat-icon>edit</mat-icon>
-                Edit
-              </button>
-              <button mat-icon-button [matMenuTriggerFor]="menu">
-                <mat-icon>more_vert</mat-icon>
-              </button>
-              <mat-menu #menu="matMenu">
-                <button mat-menu-item (click)="toggleStatus()">
-                  <mat-icon>{{ client()?.user?.isActive ? 'block' : 'check_circle' }}</mat-icon>
-                  <span>{{ client()?.user?.isActive ? 'Deactivate' : 'Activate' }}</span>
-                </button>
-              </mat-menu>
-            </div>
-          </header>
-
-          <div class="content-grid">
-            <!-- Client Info Card -->
-            <mat-card class="info-card">
-              <mat-card-header>
-                <mat-icon mat-card-avatar>person</mat-icon>
-                <mat-card-title>Client Information</mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="info-row">
-                  <span class="label">Mobile</span>
-                  <span class="value">{{ client()?.user?.mobile }}</span>
-                </div>
-                <mat-divider></mat-divider>
-                <div class="info-row">
-                  <span class="label">Created</span>
-                  <span class="value">{{ client()?.createdAt | date:'medium' }}</span>
-                </div>
-                <mat-divider></mat-divider>
-                <div class="info-row">
-                  <span class="label">Total Documents</span>
-                  <span class="value">{{ getTotalDocuments() }}</span>
-                </div>
-              </mat-card-content>
-            </mat-card>
-
-            <!-- Years/Documents Card -->
-            <mat-card class="years-card">
-              <mat-card-header>
-                <mat-icon mat-card-avatar>folder</mat-icon>
-                <mat-card-title>Document Folders</mat-card-title>
-              </mat-card-header>
-              <mat-card-content>
-                @if (client()?.years?.length) {
-                  <mat-list>
-                    @for (year of client()?.years; track year.id) {
-                      <mat-list-item class="year-item" [routerLink]="['/documents']" [queryParams]="{yearId: year.id}">
-                        <mat-icon matListItemIcon>folder</mat-icon>
-                        <span matListItemTitle>{{ year.year }}</span>
-                        <span matListItemLine>{{ year.documentCount || 0 }} documents</span>
-                        <mat-icon matListItemMeta>chevron_right</mat-icon>
-                      </mat-list-item>
-                    }
-                  </mat-list>
-                } @else {
-                  <div class="empty-state">
-                    <mat-icon>folder_off</mat-icon>
-                    <p>No document folders yet</p>
-                  </div>
-                }
-              </mat-card-content>
-            </mat-card>
           </div>
-        }
-      </div>
-    </app-layout>
+          <div class="flex items-center gap-2">
+            <a [routerLink]="['edit']" class="btn-secondary">
+              <mat-icon class="text-lg">edit</mat-icon>
+              Edit
+            </a>
+            <button 
+              [matMenuTriggerFor]="menu"
+              class="btn-icon border border-border-color"
+            >
+              <mat-icon>more_vert</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button mat-menu-item (click)="toggleStatus()">
+                <mat-icon>{{ client()?.user?.isActive ? 'block' : 'check_circle' }}</mat-icon>
+                <span>{{ client()?.user?.isActive ? 'Deactivate' : 'Activate' }}</span>
+              </button>
+            </mat-menu>
+          </div>
+        </header>
+
+        <!-- Content Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Client Info Card -->
+          <div class="bg-white dark:bg-slate-800 rounded-xl border border-border-color shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-border-color bg-slate-50 dark:bg-slate-900/50 flex items-center gap-3">
+              <div class="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
+                <mat-icon class="text-primary-600 dark:text-primary-400">person</mat-icon>
+              </div>
+              <h2 class="font-semibold text-text-primary">Client Information</h2>
+            </div>
+            <div class="divide-y divide-border-color">
+              <div class="flex justify-between items-center px-6 py-4">
+                <span class="text-text-secondary">Mobile</span>
+                <span class="font-medium text-text-primary">{{ client()?.user?.mobile }}</span>
+              </div>
+              <div class="flex justify-between items-center px-6 py-4">
+                <span class="text-text-secondary">Created</span>
+                <span class="font-medium text-text-primary">{{ client()?.createdAt | date:'mediumDate' }}</span>
+              </div>
+              <div class="flex justify-between items-center px-6 py-4">
+                <span class="text-text-secondary">Total Documents</span>
+                <span class="font-bold text-primary-600">{{ getTotalDocuments() }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Years/Documents Card -->
+          <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-border-color shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-border-color bg-slate-50 dark:bg-slate-900/50 flex items-center gap-3">
+              <div class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                <mat-icon class="text-amber-600 dark:text-amber-400">folder</mat-icon>
+              </div>
+              <h2 class="font-semibold text-text-primary">Document Folders</h2>
+            </div>
+            @if (client()?.years?.length) {
+              <div class="divide-y divide-border-color">
+                @for (year of client()?.years; track year.id) {
+                  <a 
+                    [routerLink]="['/documents']" 
+                    [queryParams]="{yearId: year.id}"
+                    class="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors group"
+                  >
+                    <div class="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg group-hover:bg-primary-100 dark:group-hover:bg-primary-900/30 transition-colors">
+                      <mat-icon class="text-slate-500 group-hover:text-primary-600 transition-colors">folder</mat-icon>
+                    </div>
+                    <div class="flex-1">
+                      <p class="font-semibold text-text-primary">{{ year.year }}</p>
+                      <p class="text-sm text-text-secondary">{{ year.documentCount || 0 }} documents</p>
+                    </div>
+                    <mat-icon class="text-slate-400 group-hover:text-primary-600 transition-colors">chevron_right</mat-icon>
+                  </a>
+                }
+              </div>
+            } @else {
+              <div class="flex flex-col items-center justify-center py-16 text-center">
+                <mat-icon class="text-5xl text-text-muted mb-3">folder_off</mat-icon>
+                <h3 class="font-semibold text-text-primary mb-1">No document folders</h3>
+                <p class="text-sm text-text-secondary">Document folders will appear here when created.</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
   `,
-  styles: [`
-    .detail-container {
-      padding: 1.5rem;
-    }
-
-    .loading-state {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 400px;
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 1.5rem;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-
-    .header-left h1 {
-      margin: 0;
-    }
-
-    .client-meta {
-      display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
-    }
-
-    .code-chip {
-      font-family: monospace;
-      font-weight: 600;
-    }
-
-    mat-chip.active {
-      background: #e8f5e9 !important;
-      color: #2e7d32 !important;
-    }
-
-    mat-chip.inactive {
-      background: #ffebee !important;
-      color: #c62828 !important;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .content-grid {
-      display: grid;
-      grid-template-columns: 1fr 2fr;
-      gap: 1.5rem;
-    }
-
-    .info-card mat-card-content,
-    .years-card mat-card-content {
-      padding-top: 1rem;
-    }
-
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 1rem 0;
-    }
-
-    .info-row .label {
-      color: var(--text-secondary);
-    }
-
-    .info-row .value {
-      font-weight: 500;
-    }
-
-    .year-item {
-      cursor: pointer;
-      border-radius: 8px;
-      margin-bottom: 0.5rem;
-    }
-
-    .year-item:hover {
-      background: var(--background-color);
-    }
-
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem;
-      color: var(--text-secondary);
-    }
-
-    .empty-state mat-icon {
-      font-size: 48px;
-      height: 48px;
-      width: 48px;
-      margin-bottom: 0.5rem;
-    }
-
-    @media (max-width: 768px) {
-      .page-header {
-        flex-direction: column;
-        gap: 1rem;
-      }
-
-      .content-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  `],
+  styles: [``],
 })
 export class ClientDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);

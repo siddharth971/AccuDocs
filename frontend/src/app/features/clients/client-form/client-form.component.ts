@@ -2,15 +2,12 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ClientService } from '@core/services/client.service';
 import { NotificationService } from '@core/services/notification.service';
-import { LayoutComponent } from '@shared/components/layout/layout.component';
 
 @Component({
   selector: 'app-client-form',
@@ -19,150 +16,137 @@ import { LayoutComponent } from '@shared/components/layout/layout.component';
     CommonModule,
     ReactiveFormsModule,
     RouterLink,
-    MatCardModule,
     MatFormFieldModule,
     MatInputModule,
-    MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    LayoutComponent,
   ],
   template: `
-    <app-layout>
-      <div class="form-container fade-in">
-        <header class="page-header">
-          <button mat-icon-button routerLink="/clients">
-            <mat-icon>arrow_back</mat-icon>
-          </button>
-          <h1>{{ isEditMode() ? 'Edit Client' : 'Add New Client' }}</h1>
-        </header>
+    <div class="w-full space-y-6">
+      <!-- Header -->
+      <header class="flex items-center gap-4">
+        <a 
+          routerLink="/clients" 
+          class="p-2 rounded-lg bg-white dark:bg-slate-800 border border-border-color hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
+        >
+          <mat-icon class="text-slate-600 dark:text-slate-300">arrow_back</mat-icon>
+        </a>
+        <div>
+          <h1 class="text-2xl font-bold text-text-primary">{{ isEditMode() ? 'Edit Client' : 'Add New Client' }}</h1>
+          <p class="text-text-secondary mt-1">{{ isEditMode() ? 'Update client information' : 'Create a new client account' }}</p>
+        </div>
+      </header>
 
-        <mat-card class="form-card">
-          @if (isLoadingData()) {
-            <div class="loading-state">
-              <mat-spinner diameter="40"></mat-spinner>
+      <!-- Form Card -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-border-color shadow-sm overflow-hidden">
+        @if (isLoadingData()) {
+          <div class="flex flex-col items-center justify-center py-20">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p class="mt-4 text-text-secondary">Loading client data...</p>
+          </div>
+        } @else {
+          <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
+            <!-- Form Header -->
+            <div class="px-6 py-4 border-b border-border-color bg-slate-50 dark:bg-slate-900/50">
+              <h2 class="font-semibold text-text-primary">Client Information</h2>
+              <p class="text-sm text-text-secondary mt-1">Fill in the details below to {{ isEditMode() ? 'update' : 'create' }} the client.</p>
             </div>
-          } @else {
-            <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
-              <div class="form-grid">
-                <mat-form-field appearance="outline">
-                  <mat-label>Client Code</mat-label>
-                  <input matInput formControlName="code" placeholder="e.g., CLI001">
-                  <mat-icon matPrefix>badge</mat-icon>
-                  @if (clientForm.get('code')?.hasError('required')) {
-                    <mat-error>Client code is required</mat-error>
-                  }
-                  <mat-hint>Unique identifier for the client</mat-hint>
-                </mat-form-field>
 
-                <mat-form-field appearance="outline">
-                  <mat-label>Client Name</mat-label>
-                  <input matInput formControlName="name" placeholder="Full name">
-                  <mat-icon matPrefix>person</mat-icon>
-                  @if (clientForm.get('name')?.hasError('required')) {
-                    <mat-error>Name is required</mat-error>
+            <!-- Form Fields -->
+            <div class="p-6 space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Client Code -->
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-text-primary">
+                    Client Code <span class="text-danger-500">*</span>
+                  </label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <mat-icon class="text-slate-400 text-xl">badge</mat-icon>
+                    </div>
+                    <input 
+                      type="text"
+                      formControlName="code"
+                      placeholder="e.g., CLI001"
+                      class="block w-full pl-11 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    >
+                  </div>
+                  <p class="text-xs text-text-secondary">Unique identifier for the client</p>
+                  @if (clientForm.get('code')?.touched && clientForm.get('code')?.hasError('required')) {
+                    <p class="text-xs text-danger-500">Client code is required</p>
                   }
-                </mat-form-field>
+                </div>
 
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Mobile Number</mat-label>
-                  <input matInput formControlName="mobile" placeholder="+919876543210">
-                  <mat-icon matPrefix>phone</mat-icon>
-                  @if (clientForm.get('mobile')?.hasError('required')) {
-                    <mat-error>Mobile number is required</mat-error>
+                <!-- Client Name -->
+                <div class="space-y-2">
+                  <label class="block text-sm font-medium text-text-primary">
+                    Full Name <span class="text-danger-500">*</span>
+                  </label>
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <mat-icon class="text-slate-400 text-xl">person</mat-icon>
+                    </div>
+                    <input 
+                      type="text"
+                      formControlName="name"
+                      placeholder="Enter client's full name"
+                      class="block w-full pl-11 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    >
+                  </div>
+                  @if (clientForm.get('name')?.touched && clientForm.get('name')?.hasError('required')) {
+                    <p class="text-xs text-danger-500">Name is required</p>
                   }
-                  <mat-hint>Include country code (e.g., +91)</mat-hint>
-                </mat-form-field>
+                </div>
               </div>
 
-              <div class="form-actions">
-                <button mat-button type="button" routerLink="/clients">
-                  Cancel
-                </button>
-                <button mat-raised-button color="primary" type="submit" [disabled]="clientForm.invalid || isSubmitting()">
-                  @if (isSubmitting()) {
-                    <mat-spinner diameter="20"></mat-spinner>
-                  } @else {
-                    <span class="flex items-center gap-2">
-                      <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
-                      {{ isEditMode() ? 'Save Changes' : 'Create Client' }}
-                    </span>
-                  }
-                </button>
+              <!-- Mobile Number - Full Width -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-text-primary">
+                  Mobile Number <span class="text-danger-500">*</span>
+                </label>
+                <div class="relative max-w-md">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <mat-icon class="text-slate-400 text-xl">phone</mat-icon>
+                  </div>
+                  <input 
+                    type="tel"
+                    formControlName="mobile"
+                    placeholder="+919876543210"
+                    class="block w-full pl-11 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                  >
+                </div>
+                <p class="text-xs text-text-secondary">Include country code (e.g., +91 for India)</p>
+                @if (clientForm.get('mobile')?.touched && clientForm.get('mobile')?.hasError('required')) {
+                  <p class="text-xs text-danger-500">Mobile number is required</p>
+                }
               </div>
-            </form>
-          }
-        </mat-card>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="px-6 py-4 border-t border-border-color bg-slate-50 dark:bg-slate-900/50 flex items-center justify-end gap-3">
+              <a routerLink="/clients" class="btn-secondary">
+                Cancel
+              </a>
+              <button 
+                type="submit" 
+                [disabled]="clientForm.invalid || isSubmitting()"
+                class="btn-primary"
+              >
+                @if (isSubmitting()) {
+                  <mat-spinner diameter="18" class="[&_circle]:stroke-white"></mat-spinner>
+                  <span>{{ isEditMode() ? 'Saving...' : 'Creating...' }}</span>
+                } @else {
+                  <mat-icon class="text-lg">{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+                  <span>{{ isEditMode() ? 'Save Changes' : 'Create Client' }}</span>
+                }
+              </button>
+            </div>
+          </form>
+        }
       </div>
-    </app-layout>
+    </div>
   `,
-  styles: [`
-    .form-container {
-      padding: 1.5rem;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .page-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .page-header h1 {
-      margin: 0;
-    }
-
-    .form-card {
-      padding: 2rem;
-    }
-
-    .loading-state {
-      display: flex;
-      justify-content: center;
-      padding: 3rem;
-    }
-
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1rem;
-    }
-
-    .full-width {
-      grid-column: 1 / -1;
-    }
-
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 1.5rem;
-      padding-top: 1.5rem;
-      border-top: 1px solid var(--border-color);
-    }
-
-    .form-actions button[type="submit"] {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    @media (max-width: 600px) {
-      .form-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .form-actions {
-        flex-direction: column-reverse;
-      }
-
-      .form-actions button {
-        width: 100%;
-      }
-    }
-  `],
+  styles: [``],
 })
 export class ClientFormComponent implements OnInit {
   private fb = inject(FormBuilder);
