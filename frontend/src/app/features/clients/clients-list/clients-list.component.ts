@@ -1,26 +1,21 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, TemplateRef, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatSortModule, Sort } from '@angular/material/sort';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatChipsModule } from '@angular/material/chips';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDividerModule } from '@angular/material/divider';
-import { ClientService, Client } from '@core/services/client.service';
-import { NotificationService } from '@core/services/notification.service';
-import { LayoutComponent } from '@shared/components/layout/layout.component';
-import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
-import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
+import { ClientsFacade } from './clients-list.facade';
+import { ButtonComponent } from '@ui/atoms/button.component';
+import { CardComponent } from '@ui/molecules/card.component';
+import { DataTableComponent } from '@ui/organisms/data-table.component';
+import { LoaderComponent } from '@ui/atoms/loader.component';
+import { NgIconComponent, provideIcons } from '@ng-icons/core';
+import {
+  heroPlusSolid,
+  heroMagnifyingGlassSolid,
+  heroUserGroupSolid,
+  heroEllipsisVerticalSolid,
+  heroPencilSquareSolid,
+  heroTrashSolid
+} from '@ng-icons/heroicons/solid';
 
 @Component({
   selector: 'app-clients-list',
@@ -29,383 +24,161 @@ import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
     CommonModule,
     RouterLink,
     FormsModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSortModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatInputModule,
-    MatFormFieldModule,
-    MatMenuModule,
-    MatChipsModule,
-    MatProgressSpinnerModule,
-    MatDialogModule,
-    MatTooltipModule,
-    MatDividerModule,
-    LayoutComponent,
+    ButtonComponent,
+    CardComponent,
+    DataTableComponent,
+    LoaderComponent,
+    NgIconComponent
+  ],
+  providers: [
+    ClientsFacade,
+    provideIcons({
+      heroPlusSolid,
+      heroMagnifyingGlassSolid,
+      heroUserGroupSolid,
+      heroEllipsisVerticalSolid,
+      heroPencilSquareSolid,
+      heroTrashSolid
+    })
   ],
   template: `
-    <app-layout>
-      <div class="clients-container fade-in">
-        <header class="page-header">
+    <div class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <!-- Header Section -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1>Clients</h1>
-            <p class="subtitle">Manage your client accounts</p>
+            <h1 class="text-3xl font-bold text-text-primary tracking-tight">Clients Management</h1>
+            <p class="text-text-secondary mt-1 text-lg">Manage your accounts and document sharing permissions.</p>
           </div>
-          <button mat-raised-button color="primary" routerLink="create">
-            <mat-icon>add</mat-icon>
-            Add Client
-          </button>
+          <app-button variant="primary" size="lg" routerLink="create">
+            <ng-icon name="heroPlusSolid" class="mr-2" size="20"></ng-icon>
+            New Client
+          </app-button>
         </header>
 
-        <mat-card class="clients-card">
-          <!-- Search and filters -->
-          <div class="toolbar">
-            <mat-form-field appearance="outline" class="search-field">
-              <mat-label>Search clients</mat-label>
-              <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)" placeholder="Name, code, or mobile...">
-              <mat-icon matPrefix>search</mat-icon>
-              @if (searchQuery) {
-                <button matSuffix mat-icon-button (click)="clearSearch()">
-                  <mat-icon>close</mat-icon>
-                </button>
-              }
-            </mat-form-field>
+        <!-- Stats Overview (Molecules) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <app-card [padding]="true" class="!bg-primary-600 text-white">
+            <div class="flex items-center gap-4">
+              <div class="p-3 bg-white/20 rounded-xl">
+                <ng-icon name="heroUserGroupSolid" size="28"></ng-icon>
+              </div>
+              <div>
+                <p class="text-white/80 text-sm font-medium">Total Clients</p>
+                <h3 class="text-2xl font-bold">{{ facade.totalCount() }}</h3>
+              </div>
+            </div>
+          </app-card>
+          <!-- Add more stat cards here -->
+        </div>
+
+        <!-- Filter & Table Section (Organism) -->
+        <app-card [padding]="false" class="overflow-visible">
+          <!-- Toolbar -->
+          <div class="p-4 border-b border-border-color flex flex-col md:flex-row items-center gap-4 bg-gray-50/30">
+            <div class="relative flex-1 w-full">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-secondary">
+                <ng-icon name="heroMagnifyingGlassSolid" size="18"></ng-icon>
+              </div>
+              <input
+                type="text"
+                [ngModel]="facade.searchQuery()"
+                (ngModelChange)="facade.searchQuery.set($event)"
+                placeholder="Search clients by name, code or mobile..."
+                class="form-input !pl-10 !bg-white"
+              />
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <select 
+                [ngModel]="facade.pageSize()" 
+                (ngModelChange)="facade.updatePagination(0, $event)"
+                class="form-input py-2 text-sm !w-auto !bg-white"
+              >
+                <option [value]="10">10 per page</option>
+                <option [value]="25">25 per page</option>
+                <option [value]="50">50 per page</option>
+              </select>
+            </div>
           </div>
 
-          @if (isLoading()) {
-            <div class="loading-state">
-              <mat-spinner diameter="40"></mat-spinner>
+          <!-- Table -->
+          @if (facade.isLoading()) {
+            <div class="py-20">
+              <app-loader size="lg" label="Fetching client data..."></app-loader>
             </div>
           } @else {
-            @if (clients().length === 0) {
-              <div class="empty-state">
-                <mat-icon>people_outline</mat-icon>
-                <h3>No clients found</h3>
-                <p>{{ searchQuery ? 'Try a different search term' : 'Get started by adding your first client' }}</p>
-                @if (!searchQuery) {
-                  <button mat-raised-button color="primary" routerLink="create">
-                    <mat-icon>add</mat-icon>
-                    Add Client
-                  </button>
-                }
-              </div>
-            } @else {
-              <div class="table-container">
-                <table mat-table [dataSource]="clients()" matSort (matSortChange)="onSortChange($event)">
-                  <!-- Code Column -->
-                  <ng-container matColumnDef="code">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Code</th>
-                    <td mat-cell *matCellDef="let client">
-                      <span class="client-code">{{ client.code }}</span>
-                    </td>
-                  </ng-container>
-
-                  <!-- Name Column -->
-                  <ng-container matColumnDef="name">
-                    <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
-                    <td mat-cell *matCellDef="let client">{{ client.user?.name }}</td>
-                  </ng-container>
-
-                  <!-- Mobile Column -->
-                  <ng-container matColumnDef="mobile">
-                    <th mat-header-cell *matHeaderCellDef>Mobile</th>
-                    <td mat-cell *matCellDef="let client">{{ client.user?.mobile }}</td>
-                  </ng-container>
-
-                  <!-- Status Column -->
-                  <ng-container matColumnDef="status">
-                    <th mat-header-cell *matHeaderCellDef>Status</th>
-                    <td mat-cell *matCellDef="let client">
-                      <mat-chip [class]="client.user?.isActive ? 'active' : 'inactive'">
-                        {{ client.user?.isActive ? 'Active' : 'Inactive' }}
-                      </mat-chip>
-                    </td>
-                  </ng-container>
-
-                  <!-- Documents Column -->
-                  <ng-container matColumnDef="documents">
-                    <th mat-header-cell *matHeaderCellDef>Documents</th>
-                    <td mat-cell *matCellDef="let client">
-                      {{ getTotalDocuments(client) }}
-                    </td>
-                  </ng-container>
-
-                  <!-- Actions Column -->
-                  <ng-container matColumnDef="actions">
-                    <th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
-                    <td mat-cell *matCellDef="let client">
-                      <button mat-icon-button [matMenuTriggerFor]="menu" matTooltip="More actions">
-                        <mat-icon>more_vert</mat-icon>
-                      </button>
-                      <mat-menu #menu="matMenu">
-                        <a mat-menu-item [routerLink]="[client.id]">
-                          <mat-icon>visibility</mat-icon>
-                          <span>View Details</span>
-                        </a>
-                        <a mat-menu-item [routerLink]="[client.id, 'edit']">
-                          <mat-icon>edit</mat-icon>
-                          <span>Edit</span>
-                        </a>
-                        <button mat-menu-item (click)="toggleStatus(client)">
-                          <mat-icon>{{ client.user?.isActive ? 'block' : 'check_circle' }}</mat-icon>
-                          <span>{{ client.user?.isActive ? 'Deactivate' : 'Activate' }}</span>
-                        </button>
-                        <mat-divider></mat-divider>
-                        <button mat-menu-item class="delete-action" (click)="confirmDelete(client)">
-                          <mat-icon>delete</mat-icon>
-                          <span>Delete</span>
-                        </button>
-                      </mat-menu>
-                    </td>
-                  </ng-container>
-
-                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                  <tr mat-row *matRowDef="let row; columns: displayedColumns;" [routerLink]="[row.id]" class="clickable-row"></tr>
-                </table>
-              </div>
-
-              <mat-paginator
-                [length]="totalCount()"
-                [pageSize]="pageSize()"
-                [pageIndex]="pageIndex()"
-                [pageSizeOptions]="[10, 25, 50]"
-                (page)="onPageChange($event)"
-                showFirstLastButtons
-              ></mat-paginator>
-            }
+            <app-data-table 
+              [data]="facade.clients()" 
+              [columns]="tableColumns"
+              [loading]="facade.isLoading()"
+            ></app-data-table>
           }
-        </mat-card>
-      </div>
-    </app-layout>
+
+          <!-- Pagination (Footer Molecule) -->
+          <footer class="px-6 py-4 flex items-center justify-between border-t border-border-color">
+            <p class="text-sm text-text-secondary">
+              Showing <span class="font-semibold text-text-primary">{{ (facade.pageIndex() * facade.pageSize()) + 1 }}</span>
+              to <span class="font-semibold text-text-primary">{{ (facade.pageIndex() + 1) * facade.pageSize() }}</span>
+              of <span class="font-semibold text-text-primary">{{ facade.totalCount() }}</span> results
+            </p>
+            <div class="flex gap-2">
+              <app-button 
+                variant="secondary" 
+                size="sm" 
+                [disabled]="facade.pageIndex() === 0"
+                (clicked)="facade.pageIndex.set(facade.pageIndex() - 1)"
+              >
+                Previous
+              </app-button>
+              <app-button 
+                variant="secondary" 
+                size="sm"
+                [disabled]="(facade.pageIndex() + 1) * facade.pageSize() >= facade.totalCount()"
+                (clicked)="facade.pageIndex.set(facade.pageIndex() + 1)"
+              >
+                Next
+              </app-button>
+            </div>
+          </footer>
+        </app-card>
+
+      <!-- Templates for Table Columns -->
+      <ng-template #statusTemplate let-row>
+        <span 
+          [class]="row.user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+        >
+          {{ row.user.isActive ? 'Active' : 'Inactive' }}
+        </span>
+      </ng-template>
+
+      <ng-template #actionsTemplate let-row>
+        <div class="flex items-center gap-2">
+          <button class="p-1.5 text-text-secondary hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
+            <ng-icon name="heroPencilSquareSolid" size="18"></ng-icon>
+          </button>
+          <button class="p-1.5 text-text-secondary hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+            <ng-icon name="heroTrashSolid" size="18"></ng-icon>
+          </button>
+        </div>
+      </ng-template>
+    </div>
   `,
-  styles: [`
-    .clients-container {
-      padding: 1.5rem;
-    }
-
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .page-header h1 {
-      margin: 0;
-    }
-
-    .subtitle {
-      color: var(--text-secondary);
-      margin: 0.25rem 0 0;
-    }
-
-    .clients-card {
-      padding: 0;
-      overflow: hidden;
-    }
-
-    .toolbar {
-      padding: 1rem;
-      border-bottom: 1px solid var(--border-color);
-    }
-
-    .search-field {
-      width: 100%;
-      max-width: 400px;
-    }
-
-    .loading-state,
-    .empty-state {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4rem 2rem;
-      color: var(--text-secondary);
-    }
-
-    .empty-state mat-icon {
-      font-size: 64px;
-      height: 64px;
-      width: 64px;
-      margin-bottom: 1rem;
-    }
-
-    .empty-state h3 {
-      margin: 0 0 0.5rem;
-      color: var(--text-primary);
-    }
-
-    .empty-state p {
-      margin: 0 0 1.5rem;
-    }
-
-    .table-container {
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-    }
-
-    .client-code {
-      font-family: monospace;
-      font-weight: 600;
-      background: var(--background-color);
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-    }
-
-    .clickable-row {
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .clickable-row:hover {
-      background: var(--background-color) !important;
-    }
-
-    mat-chip.active {
-      background: #e8f5e9 !important;
-      color: #2e7d32 !important;
-    }
-
-    mat-chip.inactive {
-      background: #ffebee !important;
-      color: #c62828 !important;
-    }
-
-    .actions-header {
-      width: 80px;
-    }
-
-    .delete-action {
-      color: #c62828;
-    }
-
-    @media (max-width: 768px) {
-      .page-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-      }
-
-      .page-header button {
-        width: 100%;
-      }
-    }
-  `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ClientsListComponent implements OnInit {
-  private clientService = inject(ClientService);
-  private notificationService = inject(NotificationService);
-  private dialog = inject(MatDialog);
+export class ClientsListComponent {
+  facade = inject(ClientsFacade);
 
-  displayedColumns = ['code', 'name', 'mobile', 'status', 'documents', 'actions'];
+  statusTemplate = viewChild.required<TemplateRef<any>>('statusTemplate');
+  actionsTemplate = viewChild.required<TemplateRef<any>>('actionsTemplate');
 
-  clients = signal<Client[]>([]);
-  isLoading = signal(true);
-  totalCount = signal(0);
-  pageSize = signal(10);
-  pageIndex = signal(0);
-
-  searchQuery = '';
-  sortBy = 'createdAt';
-  sortOrder: 'asc' | 'desc' = 'desc';
-
-  private searchSubject = new Subject<string>();
-
-  ngOnInit(): void {
-    this.loadClients();
-
-    this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged()
-    ).subscribe(() => {
-      this.pageIndex.set(0);
-      this.loadClients();
-    });
-  }
-
-  loadClients(): void {
-    this.isLoading.set(true);
-
-    this.clientService.getClients(
-      this.pageIndex() + 1,
-      this.pageSize(),
-      this.searchQuery,
-      this.sortBy,
-      this.sortOrder
-    ).subscribe({
-      next: (response) => {
-        this.clients.set(response.data);
-        this.totalCount.set(response.meta.total);
-      },
-      error: () => this.isLoading.set(false),
-      complete: () => this.isLoading.set(false),
-    });
-  }
-
-  onSearchChange(value: string): void {
-    this.searchSubject.next(value);
-  }
-
-  clearSearch(): void {
-    this.searchQuery = '';
-    this.loadClients();
-  }
-
-  onPageChange(event: PageEvent): void {
-    this.pageIndex.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
-    this.loadClients();
-  }
-
-  onSortChange(sort: Sort): void {
-    this.sortBy = sort.active;
-    this.sortOrder = sort.direction as 'asc' | 'desc' || 'desc';
-    this.loadClients();
-  }
-
-  getTotalDocuments(client: Client): number {
-    return client.years?.reduce((total, year) => total + (year.documentCount || 0), 0) || 0;
-  }
-
-  toggleStatus(client: Client): void {
-    this.clientService.toggleClientActive(client.id).subscribe({
-      next: () => {
-        this.notificationService.success(`Client ${client.user?.isActive ? 'deactivated' : 'activated'}`);
-        this.loadClients();
-      },
-    });
-  }
-
-  confirmDelete(client: Client): void {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      data: {
-        title: 'Delete Client',
-        message: `Are you sure you want to delete "${client.user?.name}"? This action cannot be undone and will delete all associated documents.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
-        color: 'warn',
-      },
-    });
-
-    dialogRef.afterClosed().subscribe((confirmed) => {
-      if (confirmed) {
-        this.deleteClient(client);
-      }
-    });
-  }
-
-  private deleteClient(client: Client): void {
-    this.clientService.deleteClient(client.id).subscribe({
-      next: () => {
-        this.notificationService.success('Client deleted successfully');
-        this.loadClients();
-      },
-    });
+  get tableColumns() {
+    return [
+      { header: 'Client Code', field: 'code' },
+      { header: 'Name', field: 'user.name' }, // Note: Nested access handled by data-table or facade
+      { header: 'Mobile', field: 'user.mobile' },
+      { header: 'Status', field: 'status', template: this.statusTemplate() },
+      { header: 'Actions', field: 'actions', template: this.actionsTemplate() },
+    ];
   }
 }

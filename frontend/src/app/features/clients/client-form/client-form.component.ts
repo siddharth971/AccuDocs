@@ -83,8 +83,10 @@ import { LayoutComponent } from '@shared/components/layout/layout.component';
                   @if (isSubmitting()) {
                     <mat-spinner diameter="20"></mat-spinner>
                   } @else {
-                    <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
-                    {{ isEditMode() ? 'Save Changes' : 'Create Client' }}
+                    <span class="flex items-center gap-2">
+                      <mat-icon>{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+                      {{ isEditMode() ? 'Save Changes' : 'Create Client' }}
+                    </span>
                   }
                 </button>
               </div>

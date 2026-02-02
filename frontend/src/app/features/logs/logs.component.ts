@@ -12,7 +12,6 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { LogService, Log } from '@core/services/log.service';
-import { LayoutComponent } from '@shared/components/layout/layout.component';
 
 @Component({
   selector: 'app-logs',
@@ -20,94 +19,97 @@ import { LayoutComponent } from '@shared/components/layout/layout.component';
   imports: [
     CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule,
     MatTableModule, MatPaginatorModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatProgressSpinnerModule, MatChipsModule, LayoutComponent,
+    MatSelectModule, MatProgressSpinnerModule, MatChipsModule,
   ],
   template: `
-    <app-layout>
-      <div class="logs-container fade-in">
-        <header class="page-header">
-          <h1>Activity Logs</h1>
-        </header>
+    <div class="w-full space-y-6">
+      <!-- Header -->
+      <header>
+        <h1 class="text-2xl font-bold text-text-primary">Activity Logs</h1>
+        <p class="text-text-secondary mt-1">Monitor system activity and user actions.</p>
+      </header>
 
-        <mat-card>
-          <div class="toolbar">
-            <mat-form-field appearance="outline" class="search-field">
-              <mat-label>Search</mat-label>
-              <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearch()">
-              <mat-icon matPrefix>search</mat-icon>
-            </mat-form-field>
+      <!-- Content Card -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-border-color shadow-sm overflow-hidden">
+        <!-- Filters -->
+        <div class="flex flex-wrap gap-4 p-4 border-b border-border-color bg-slate-50 dark:bg-slate-900/50">
+          <mat-form-field appearance="outline" class="flex-1 min-w-[250px]">
+            <mat-label>Search</mat-label>
+            <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearch()">
+            <mat-icon matPrefix>search</mat-icon>
+          </mat-form-field>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Action</mat-label>
-              <mat-select [(ngModel)]="selectedAction" (ngModelChange)="onSearch()">
-                <mat-option value="">All</mat-option>
-                @for (action of actions; track action) {
-                  <mat-option [value]="action">{{ logService.getActionLabel(action) }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+          <mat-form-field appearance="outline" class="min-w-[180px]">
+            <mat-label>Action</mat-label>
+            <mat-select [(ngModel)]="selectedAction" (ngModelChange)="onSearch()">
+              <mat-option value="">All</mat-option>
+              @for (action of actions; track action) {
+                <mat-option [value]="action">{{ logService.getActionLabel(action) }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        @if (isLoading()) {
+          <div class="flex flex-col items-center justify-center py-20">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p class="mt-4 text-text-secondary">Loading logs...</p>
           </div>
-
-          @if (isLoading()) {
-            <div class="loading"><mat-spinner diameter="40"></mat-spinner></div>
-          } @else if (logs().length === 0) {
-            <div class="empty"><mat-icon>history</mat-icon><p>No logs found</p></div>
-          } @else {
-            <table mat-table [dataSource]="logs()">
+        } @else if (logs().length === 0) {
+          <div class="flex flex-col items-center justify-center py-20 text-center">
+            <mat-icon class="text-6xl text-text-muted mb-4">history</mat-icon>
+            <h3 class="text-lg font-semibold text-text-primary mb-2">No logs found</h3>
+            <p class="text-text-secondary">No activity has been recorded yet.</p>
+          </div>
+        } @else {
+          <div class="overflow-x-auto">
+            <table mat-table [dataSource]="logs()" class="w-full">
               <ng-container matColumnDef="action">
-                <th mat-header-cell *matHeaderCellDef>Action</th>
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">Action</th>
                 <td mat-cell *matCellDef="let log">
-                  <mat-chip>{{ logService.getActionLabel(log.action) }}</mat-chip>
+                  <mat-chip class="!text-xs">{{ logService.getActionLabel(log.action) }}</mat-chip>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="description">
-                <th mat-header-cell *matHeaderCellDef>Description</th>
-                <td mat-cell *matCellDef="let log">{{ log.description }}</td>
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">Description</th>
+                <td mat-cell *matCellDef="let log" class="text-text-secondary">{{ log.description }}</td>
               </ng-container>
 
               <ng-container matColumnDef="user">
-                <th mat-header-cell *matHeaderCellDef>User</th>
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">User</th>
                 <td mat-cell *matCellDef="let log">{{ log.user?.name || 'System' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="ip">
-                <th mat-header-cell *matHeaderCellDef>IP</th>
-                <td mat-cell *matCellDef="let log">{{ log.ip || '-' }}</td>
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">IP</th>
+                <td mat-cell *matCellDef="let log" class="text-text-muted font-mono text-sm">{{ log.ip || '-' }}</td>
               </ng-container>
 
               <ng-container matColumnDef="createdAt">
-                <th mat-header-cell *matHeaderCellDef>Date</th>
-                <td mat-cell *matCellDef="let log">{{ log.createdAt | date:'medium' }}</td>
+                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">Date</th>
+                <td mat-cell *matCellDef="let log" class="text-text-secondary">{{ log.createdAt | date:'medium' }}</td>
               </ng-container>
 
               <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-slate-50 dark:hover:bg-slate-700/50"></tr>
             </table>
+          </div>
 
-            <mat-paginator
-              [length]="totalCount()"
-              [pageSize]="pageSize()"
-              [pageIndex]="pageIndex()"
-              [pageSizeOptions]="[20, 50, 100]"
-              (page)="onPageChange($event)"
-              showFirstLastButtons
-            ></mat-paginator>
-          }
-        </mat-card>
+          <mat-paginator
+            [length]="totalCount()"
+            [pageSize]="pageSize()"
+            [pageIndex]="pageIndex()"
+            [pageSizeOptions]="[20, 50, 100]"
+            (page)="onPageChange($event)"
+            showFirstLastButtons
+            class="border-t border-border-color"
+          ></mat-paginator>
+        }
       </div>
-    </app-layout>
+    </div>
   `,
-  styles: [`
-    .logs-container { padding: 1.5rem; }
-    .page-header { margin-bottom: 1rem; }
-    .page-header h1 { margin: 0; }
-    .toolbar { display: flex; gap: 1rem; padding: 1rem; flex-wrap: wrap; }
-    .search-field { flex: 1; min-width: 200px; }
-    .loading, .empty { display: flex; flex-direction: column; align-items: center; padding: 4rem; color: var(--text-secondary); }
-    .empty mat-icon { font-size: 48px; height: 48px; width: 48px; }
-    table { width: 100%; }
-  `],
+  styles: [``],
 })
 export class LogsComponent implements OnInit {
   logService = inject(LogService);

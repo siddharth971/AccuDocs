@@ -18,7 +18,6 @@ import { HttpEventType } from '@angular/common/http';
 import { DocumentService, Document } from '@core/services/document.service';
 import { AuthService } from '@core/services/auth.service';
 import { NotificationService } from '@core/services/notification.service';
-import { LayoutComponent } from '@shared/components/layout/layout.component';
 import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -28,65 +27,70 @@ import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confir
     CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule,
     MatFormFieldModule, MatInputModule, MatSelectModule, MatProgressSpinnerModule,
     MatProgressBarModule, MatMenuModule, MatDialogModule, MatTooltipModule,
-    MatPaginatorModule, LayoutComponent,
+    MatPaginatorModule,
   ],
   template: `
-    <app-layout>
-      <div class="documents-container fade-in">
-        <header class="page-header">
-          <h1>Documents</h1>
-          @if (authService.isAdmin()) {
-            <input type="file" #fileInput (change)="onFileSelected($any($event))" hidden>
-            <button mat-raised-button color="primary" (click)="fileInput.click()">
-              <mat-icon>cloud_upload</mat-icon> Upload
-            </button>
-          }
-        </header>
+    <div class="w-full space-y-6">
+      <!-- Header -->
+      <header class="flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-text-primary">Documents</h1>
+          <p class="text-text-secondary mt-1">Manage and access your uploaded documents.</p>
+        </div>
+        @if (authService.isAdmin()) {
+          <input type="file" #fileInput (change)="onFileSelected($any($event))" hidden>
+          <button 
+            (click)="fileInput.click()"
+            class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary-600 text-white font-semibold rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            <mat-icon class="text-xl">cloud_upload</mat-icon>
+            Upload Document
+          </button>
+        }
+      </header>
 
-        <mat-card>
-          @if (isLoading()) {
-            <div class="loading"><mat-spinner diameter="40"></mat-spinner></div>
-          } @else if (documents().length === 0) {
-            <div class="empty"><mat-icon>folder_open</mat-icon><p>No documents found</p></div>
-          } @else {
-            <div class="grid">
-              @for (doc of documents(); track doc.id) {
-                <div class="doc-card" (click)="download(doc)">
-                  <mat-icon>{{ documentService.getFileIcon(doc.mimeType) }}</mat-icon>
-                  <div class="info">
-                    <span class="name">{{ doc.originalName }}</span>
-                    <span class="meta">{{ documentService.formatFileSize(doc.size) }}</span>
-                  </div>
-                  <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
-                    <mat-icon>more_vert</mat-icon>
-                  </button>
-                  <mat-menu #menu="matMenu">
-                    <button mat-menu-item (click)="download(doc)"><mat-icon>download</mat-icon>Download</button>
-                    @if (authService.isAdmin()) {
-                      <button mat-menu-item (click)="confirmDelete(doc)"><mat-icon>delete</mat-icon>Delete</button>
-                    }
-                  </mat-menu>
+      <!-- Content Card -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-border-color shadow-sm overflow-hidden">
+        @if (isLoading()) {
+          <div class="flex flex-col items-center justify-center py-20">
+            <mat-spinner diameter="40"></mat-spinner>
+            <p class="mt-4 text-text-secondary">Loading documents...</p>
+          </div>
+        } @else if (documents().length === 0) {
+          <div class="flex flex-col items-center justify-center py-20 text-center">
+            <mat-icon class="text-6xl text-text-muted mb-4">folder_open</mat-icon>
+            <h3 class="text-lg font-semibold text-text-primary mb-2">No documents found</h3>
+            <p class="text-text-secondary">Upload your first document to get started.</p>
+          </div>
+        } @else {
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-6">
+            @for (doc of documents(); track doc.id) {
+              <div 
+                class="flex items-center gap-4 p-4 bg-slate-50 dark:bg-slate-700 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors border border-transparent hover:border-primary-200"
+                (click)="download(doc)"
+              >
+                <mat-icon class="text-primary-600 text-3xl">{{ documentService.getFileIcon(doc.mimeType) }}</mat-icon>
+                <div class="flex-1 min-w-0">
+                  <p class="font-medium text-text-primary truncate">{{ doc.originalName }}</p>
+                  <p class="text-sm text-text-secondary">{{ documentService.formatFileSize(doc.size) }}</p>
                 </div>
-              }
-            </div>
-          }
-        </mat-card>
+                <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #menu="matMenu">
+                  <button mat-menu-item (click)="download(doc)"><mat-icon>download</mat-icon>Download</button>
+                  @if (authService.isAdmin()) {
+                    <button mat-menu-item (click)="confirmDelete(doc)" class="text-danger-600"><mat-icon>delete</mat-icon>Delete</button>
+                  }
+                </mat-menu>
+              </div>
+            }
+          </div>
+        }
       </div>
-    </app-layout>
+    </div>
   `,
-  styles: [`
-    .documents-container { padding: 1.5rem; }
-    .page-header { display: flex; justify-content: space-between; margin-bottom: 1rem; }
-    .page-header h1 { margin: 0; }
-    .loading, .empty { display: flex; flex-direction: column; align-items: center; padding: 4rem; }
-    .empty mat-icon { font-size: 48px; height: 48px; width: 48px; color: var(--text-secondary); }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; padding: 1rem; }
-    .doc-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--background-color); border-radius: 8px; cursor: pointer; }
-    .doc-card:hover { background: var(--border-color); }
-    .info { flex: 1; min-width: 0; }
-    .name { display: block; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .meta { font-size: 0.8rem; color: var(--text-secondary); }
-  `],
+  styles: [``],
 })
 export class DocumentsListComponent implements OnInit {
   authService = inject(AuthService);
