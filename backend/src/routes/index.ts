@@ -4,6 +4,7 @@ import clientRoutes from './client.routes';
 import documentRoutes from './document.routes';
 import logRoutes from './log.routes';
 import whatsappRoutes from './whatsapp.routes';
+import workspaceRoutes from './workspace.routes';
 
 const router = Router();
 
@@ -23,5 +24,7 @@ router.use('/clients', clientRoutes);
 router.use('/documents', documentRoutes);
 router.use('/logs', logRoutes);
 router.use('/whatsapp', whatsappRoutes);
+router.use('/workspace', workspaceRoutes);
 
 export default router;
+

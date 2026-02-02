@@ -68,12 +68,21 @@ export const clientService = {
       userId: user.id,
     });
 
-    // Create default year folders (2021-2030)
+    // Create default year folders (2021-2030) - Legacy support
     const years = [];
     for (let year = 2021; year <= 2030; year++) {
       years.push(String(year));
     }
     await yearRepository.createMany(client.id, years);
+
+    // Create folder structure for new workspace system
+    try {
+      const { workspaceService } = await import('./workspace.service');
+      await workspaceService.createClientFolderStructure(client.id, data.code);
+    } catch (error) {
+      logger.warn(`Failed to create folder structure for client ${data.code}: ${(error as Error).message}`);
+      // Don't fail the client creation if folder structure fails
+    }
 
     // Log the action
     await logRepository.create({

@@ -11,6 +11,7 @@ const startServer = async (): Promise<void> => {
     logger.info('✅ Configuration validated');
 
     logger.info('🚀 Starting AccuDocs Server initialization...');
+    // Force restart to pick up new routes and logic
 
     // Connect to database
     await connectDatabase();

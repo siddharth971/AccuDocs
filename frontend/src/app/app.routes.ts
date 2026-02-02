@@ -37,6 +37,10 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { roles: ['admin'] },
       },
+      {
+        path: 'workspace',
+        loadChildren: () => import('./features/workspace/workspace.routes').then((m) => m.WORKSPACE_ROUTES),
+      },
     ]
   },
   {

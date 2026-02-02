@@ -4,3 +4,5 @@ export { yearRepository } from './year.repository';
 export { documentRepository } from './document.repository';
 export { otpRepository } from './otp.repository';
 export { logRepository } from './log.repository';
+export { folderRepository } from './folder.repository';
+export { fileRepository } from './file.repository';

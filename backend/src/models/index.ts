@@ -4,6 +4,8 @@ import { Year } from './year.model';
 import { Document } from './document.model';
 import { OTP } from './otp.model';
 import { Log } from './log.model';
+import { Folder } from './folder.model';
+import { File } from './file.model';
 
 // Define associations
 export const initializeAssociations = (): void => {
@@ -18,7 +20,7 @@ export const initializeAssociations = (): void => {
     as: 'user',
   });
 
-  // Client -> Year (One-to-Many)
+  // Client -> Year (One-to-Many) - Legacy support
   Client.hasMany(Year, {
     foreignKey: 'clientId',
     as: 'years',
@@ -29,7 +31,7 @@ export const initializeAssociations = (): void => {
     as: 'client',
   });
 
-  // Year -> Document (One-to-Many)
+  // Year -> Document (One-to-Many) - Legacy support
   Year.hasMany(Document, {
     foreignKey: 'yearId',
     as: 'documents',
@@ -40,7 +42,7 @@ export const initializeAssociations = (): void => {
     as: 'year',
   });
 
-  // User -> Document (One-to-Many - uploaded by)
+  // User -> Document (One-to-Many - uploaded by) - Legacy support
   User.hasMany(Document, {
     foreignKey: 'uploadedBy',
     as: 'uploadedDocuments',
@@ -61,6 +63,52 @@ export const initializeAssociations = (): void => {
     foreignKey: 'userId',
     as: 'user',
   });
+
+  // ========== NEW FOLDER SYSTEM ASSOCIATIONS ==========
+
+  // Client -> Folder (One-to-Many)
+  Client.hasMany(Folder, {
+    foreignKey: 'clientId',
+    as: 'folders',
+  });
+
+  Folder.belongsTo(Client, {
+    foreignKey: 'clientId',
+    as: 'client',
+  });
+
+  // Folder -> Folder (Self-referential for hierarchy)
+  Folder.hasMany(Folder, {
+    foreignKey: 'parentId',
+    as: 'children',
+  });
+
+  Folder.belongsTo(Folder, {
+    foreignKey: 'parentId',
+    as: 'parent',
+  });
+
+  // Folder -> File (One-to-Many)
+  Folder.hasMany(File, {
+    foreignKey: 'folderId',
+    as: 'files',
+  });
+
+  File.belongsTo(Folder, {
+    foreignKey: 'folderId',
+    as: 'folder',
+  });
+
+  // User -> File (One-to-Many - uploaded by)
+  User.hasMany(File, {
+    foreignKey: 'uploadedBy',
+    as: 'uploadedFiles',
+  });
+
+  File.belongsTo(User, {
+    foreignKey: 'uploadedBy',
+    as: 'uploader',
+  });
 };
 
 // Export all models
@@ -70,6 +118,8 @@ export { Year } from './year.model';
 export { Document } from './document.model';
 export { OTP } from './otp.model';
 export { Log } from './log.model';
+export { Folder } from './folder.model';
+export { File } from './file.model';
 
 // Export types
 export type { UserAttributes, UserCreationAttributes, UserRole } from './user.model';
@@ -78,3 +128,5 @@ export type { YearAttributes, YearCreationAttributes } from './year.model';
 export type { DocumentAttributes, DocumentCreationAttributes } from './document.model';
 export type { OTPAttributes, OTPCreationAttributes } from './otp.model';
 export type { LogAttributes, LogCreationAttributes, LogAction } from './log.model';
+export type { FolderAttributes, FolderCreationAttributes, FolderType } from './folder.model';
+export type { FileAttributes, FileCreationAttributes } from './file.model';

@@ -14,7 +14,8 @@ import {
   heroUserGroupSolid,
   heroEllipsisVerticalSolid,
   heroPencilSquareSolid,
-  heroTrashSolid
+  heroTrashSolid,
+  heroFolderOpenSolid
 } from '@ng-icons/heroicons/solid';
 
 @Component({
@@ -38,7 +39,8 @@ import {
       heroUserGroupSolid,
       heroEllipsisVerticalSolid,
       heroPencilSquareSolid,
-      heroTrashSolid
+      heroTrashSolid,
+      heroFolderOpenSolid
     })
   ],
   template: `
@@ -154,6 +156,13 @@ import {
 
       <ng-template #actionsTemplate let-row>
         <div class="flex items-center gap-2">
+          <button 
+            [routerLink]="['/workspace', row.id]" 
+            class="p-1.5 text-text-secondary hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
+            title="Open Workspace"
+          >
+            <ng-icon name="heroFolderOpenSolid" size="18"></ng-icon>
+          </button>
           <button class="p-1.5 text-text-secondary hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
             <ng-icon name="heroPencilSquareSolid" size="18"></ng-icon>
           </button>
