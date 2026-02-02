@@ -14,14 +14,14 @@ export interface OTPAttributes {
 export interface OTPCreationAttributes extends Optional<OTPAttributes, 'id' | 'attempts' | 'createdAt' | 'updatedAt'> { }
 
 export class OTP extends Model<OTPAttributes, OTPCreationAttributes> implements OTPAttributes {
-  public id!: string;
-  public mobile!: string;
-  public otpHash!: string;
-  public expiresAt!: Date;
-  public attempts!: number;
+  declare public id: string;
+  declare public mobile: string;
+  declare public otpHash: string;
+  declare public expiresAt: Date;
+  declare public attempts: number;
 
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   public isExpired(): boolean {
     return new Date() > this.expiresAt;

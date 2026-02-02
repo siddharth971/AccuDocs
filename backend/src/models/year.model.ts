@@ -12,12 +12,12 @@ export interface YearAttributes {
 export interface YearCreationAttributes extends Optional<YearAttributes, 'id' | 'createdAt' | 'updatedAt'> { }
 
 export class Year extends Model<YearAttributes, YearCreationAttributes> implements YearAttributes {
-  public id!: string;
-  public year!: string;
-  public clientId!: string;
+  declare public id: string;
+  declare public year: string;
+  declare public clientId: string;
 
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Associations
   public readonly client?: any;

@@ -28,7 +28,7 @@ export const generateAccessToken = (payload: TokenPayload): string => {
  */
 export const generateRefreshToken = (payload: TokenPayload): string => {
   const options: SignOptions = {
-    expiresIn: config.jwt.refreshExpiresIn as string,
+    expiresIn: config.jwt.refreshExpiresIn as any,
     issuer: 'accudocs-api',
     audience: 'accudocs-client',
   };

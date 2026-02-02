@@ -17,17 +17,17 @@ export interface DocumentAttributes {
 export interface DocumentCreationAttributes extends Optional<DocumentAttributes, 'id' | 'createdAt' | 'updatedAt'> { }
 
 export class Document extends Model<DocumentAttributes, DocumentCreationAttributes> implements DocumentAttributes {
-  public id!: string;
-  public fileName!: string;
-  public originalName!: string;
-  public s3Path!: string;
-  public mimeType!: string;
-  public size!: number;
-  public yearId!: string;
-  public uploadedBy!: string;
+  declare public id: string;
+  declare public fileName: string;
+  declare public originalName: string;
+  declare public s3Path: string;
+  declare public mimeType: string;
+  declare public size: number;
+  declare public yearId: string;
+  declare public uploadedBy: string;
 
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Associations
   public readonly year?: any;

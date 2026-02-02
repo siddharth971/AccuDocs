@@ -166,17 +166,29 @@ export const authService = {
    * Admin login with password
    */
   async adminLogin(mobile: string, password: string, ip?: string, userAgent?: string): Promise<AuthResult> {
+    logger.info(`Attempting admin login for mobile: '${mobile}'`);
     const user = await userRepository.findByMobile(mobile);
-    if (!user || user.role !== 'admin') {
+
+    if (!user) {
+      logger.warn(`Admin login failed: User with mobile '${mobile}' not found`);
+      throw new UnauthorizedError('Invalid credentials');
+    }
+
+    logger.debug(`User found: ${user.mobile}, Role: ${user.role}`);
+
+    if (user.role !== 'admin') {
+      logger.warn(`Admin login failed: User ${mobile} has role '${user.role}', not 'admin'`);
       throw new UnauthorizedError('Invalid credentials');
     }
 
     if (!user.password) {
+      logger.warn(`Admin login failed: User ${mobile} has no password set`);
       throw new UnauthorizedError('Password not set for this account');
     }
 
     const isValid = await verifyPassword(password, user.password);
     if (!isValid) {
+      logger.warn(`Admin login failed: Incorrect password for user ${mobile}`);
       await logRepository.create({
         userId: user.id,
         action: 'ACCESS_DENIED',

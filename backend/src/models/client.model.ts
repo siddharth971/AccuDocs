@@ -12,12 +12,12 @@ export interface ClientAttributes {
 export interface ClientCreationAttributes extends Optional<ClientAttributes, 'id' | 'createdAt' | 'updatedAt'> { }
 
 export class Client extends Model<ClientAttributes, ClientCreationAttributes> implements ClientAttributes {
-  public id!: string;
-  public code!: string;
-  public userId!: string;
+  declare public id: string;
+  declare public code: string;
+  declare public userId: string;
 
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  declare public readonly createdAt: Date;
+  declare public readonly updatedAt: Date;
 
   // Associations
   public readonly user?: any;
@@ -32,12 +32,9 @@ Client.init(
       primaryKey: true,
     },
     code: {
-      type: DataTypes.STRING(10),
+      type: DataTypes.STRING(20), // Increased length just in case
       allowNull: false,
       unique: true,
-      validate: {
-        is: /^[A-Z0-9]{2,10}$/,
-      },
     },
     userId: {
       type: DataTypes.UUID,

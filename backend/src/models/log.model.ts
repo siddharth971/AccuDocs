@@ -32,15 +32,15 @@ export interface LogAttributes {
 export interface LogCreationAttributes extends Optional<LogAttributes, 'id' | 'userId' | 'ip' | 'userAgent' | 'metadata' | 'createdAt'> { }
 
 export class Log extends Model<LogAttributes, LogCreationAttributes> implements LogAttributes {
-  public id!: string;
-  public userId?: string;
-  public action!: LogAction;
-  public description!: string;
-  public ip?: string;
-  public userAgent?: string;
-  public metadata?: object;
+  declare public id: string;
+  declare public userId?: string;
+  declare public action: LogAction;
+  declare public description: string;
+  declare public ip?: string;
+  declare public userAgent?: string;
+  declare public metadata?: object;
 
-  public readonly createdAt!: Date;
+  declare public readonly createdAt: Date;
 
   // Associations
   public readonly user?: any;

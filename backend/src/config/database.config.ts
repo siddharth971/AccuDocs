@@ -42,7 +42,7 @@ export const connectDatabase = async (): Promise<void> => {
     logger.info('✅ Database connection established successfully');
 
     if (config.nodeEnv === 'development') {
-      await sequelize.sync({ alter: true });
+      await sequelize.sync();
       logger.info('✅ Database synchronized');
     }
   } catch (error) {

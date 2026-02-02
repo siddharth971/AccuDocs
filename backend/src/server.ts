@@ -10,6 +10,8 @@ const startServer = async (): Promise<void> => {
     validateConfig();
     logger.info('✅ Configuration validated');
 
+    logger.info('🚀 Starting AccuDocs Server initialization...');
+
     // Connect to database
     await connectDatabase();
 

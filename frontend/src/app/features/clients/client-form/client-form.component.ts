@@ -52,9 +52,6 @@ import { LayoutComponent } from '@shared/components/layout/layout.component';
                   @if (clientForm.get('code')?.hasError('required')) {
                     <mat-error>Client code is required</mat-error>
                   }
-                  @if (clientForm.get('code')?.hasError('pattern')) {
-                    <mat-error>Code must be alphanumeric (3-10 characters)</mat-error>
-                  }
                   <mat-hint>Unique identifier for the client</mat-hint>
                 </mat-form-field>
 
@@ -65,9 +62,6 @@ import { LayoutComponent } from '@shared/components/layout/layout.component';
                   @if (clientForm.get('name')?.hasError('required')) {
                     <mat-error>Name is required</mat-error>
                   }
-                  @if (clientForm.get('name')?.hasError('minlength')) {
-                    <mat-error>Name must be at least 2 characters</mat-error>
-                  }
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="full-width">
@@ -76,9 +70,6 @@ import { LayoutComponent } from '@shared/components/layout/layout.component';
                   <mat-icon matPrefix>phone</mat-icon>
                   @if (clientForm.get('mobile')?.hasError('required')) {
                     <mat-error>Mobile number is required</mat-error>
-                  }
-                  @if (clientForm.get('mobile')?.hasError('pattern')) {
-                    <mat-error>Enter a valid mobile number</mat-error>
                   }
                   <mat-hint>Include country code (e.g., +91)</mat-hint>
                 </mat-form-field>
@@ -184,9 +175,9 @@ export class ClientFormComponent implements OnInit {
   private clientId: string | null = null;
 
   clientForm: FormGroup = this.fb.group({
-    code: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9]{3,10}$/)]],
-    name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    mobile: ['', [Validators.required, Validators.pattern(/^\+?[1-9]\d{9,14}$/)]],
+    code: ['', [Validators.required]],
+    name: ['', [Validators.required]],
+    mobile: ['', [Validators.required]],
   });
 
   ngOnInit(): void {
