@@ -144,6 +144,13 @@ export class WorkspaceService {
   }
 
   /**
+   * Rename a folder
+   */
+  renameFolder(folderId: string, name: string): Observable<ApiResponse<FolderNode>> {
+    return this.http.patch<ApiResponse<FolderNode>>(`${this.baseUrl}/folders/${folderId}/rename`, { name });
+  }
+
+  /**
    * Add year folder to client
    */
   addYearFolder(clientId: string, year: string): Observable<ApiResponse<FolderNode>> {

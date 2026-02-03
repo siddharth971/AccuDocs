@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +28,9 @@ import {
   heroTableCellsSolid,
   heroArchiveBoxSolid,
   heroPlusSolid,
-  heroArrowPathSolid
+  heroArrowPathSolid,
+  heroFolderPlusSolid,
+  heroEllipsisVerticalSolid
 } from '@ng-icons/heroicons/solid';
 
 @Component({
@@ -62,7 +64,9 @@ import {
       heroTableCellsSolid,
       heroArchiveBoxSolid,
       heroPlusSolid,
-      heroArrowPathSolid
+      heroArrowPathSolid,
+      heroFolderPlusSolid,
+      heroEllipsisVerticalSolid
     })
   ],
   template: `
@@ -82,6 +86,10 @@ import {
           <app-button variant="secondary" size="md" (clicked)="refresh()">
             <ng-icon name="heroArrowPathSolid" class="mr-2" size="18"></ng-icon>
             Refresh
+          </app-button>
+          <app-button variant="secondary" size="md" (clicked)="triggerFolderCreate()">
+            <ng-icon name="heroFolderPlusSolid" class="mr-2" size="18"></ng-icon>
+            New Folder
           </app-button>
           <app-button variant="primary" size="md" (clicked)="triggerUpload()">
             <ng-icon name="heroArrowUpTraySolid" class="mr-2" size="18"></ng-icon>
@@ -208,11 +216,31 @@ import {
                           <p class="font-medium text-text-primary truncate">{{ folder.name }}</p>
                           <p class="text-xs text-text-secondary">
                             {{ folder.fileCount }} files
-                            @if (folder.children.length) {
+                            @if (folder.children?.length) {
                               · {{ folder.children.length }} folders
                             }
                           </p>
                         </div>
+                        
+                        <!-- Folder Actions (Hover) -->
+                        @if (!['root', 'documents', 'years', 'year'].includes(folder.type)) {
+                          <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            <button 
+                              class="p-1.5 bg-white/90 hover:bg-white rounded-lg shadow-sm text-text-secondary hover:text-primary-600 transition-colors"
+                              (click)="triggerFolderRename(folder); $event.stopPropagation()"
+                              title="Rename"
+                            >
+                              <ng-icon name="heroPencilSquareSolid" size="14"></ng-icon>
+                            </button>
+                            <button 
+                              class="p-1.5 bg-white/90 hover:bg-white rounded-lg shadow-sm text-text-secondary hover:text-red-600 transition-colors"
+                              (click)="triggerFolderDelete(folder); $event.stopPropagation()"
+                              title="Delete"
+                            >
+                              <ng-icon name="heroTrashSolid" size="14"></ng-icon>
+                            </button>
+                          </div>
+                        }
                       </button>
                     }
                   </div>
@@ -312,7 +340,7 @@ import {
 
       <!-- Rename Modal -->
       @if (showRenameModal()) {
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="closeRenameModal()">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-md z-modal-backdrop flex items-center justify-center p-4" (click)="closeRenameModal()">
           <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
             <div class="p-6 border-b border-border-color">
               <h3 class="text-lg font-bold text-text-primary">Rename File</h3>
@@ -336,7 +364,7 @@ import {
 
       <!-- Delete Confirmation Modal -->
       @if (showDeleteModal()) {
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" (click)="closeDeleteModal()">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-md z-modal-backdrop flex items-center justify-center p-4" (click)="closeDeleteModal()">
           <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
             <div class="p-6 border-b border-border-color">
               <h3 class="text-lg font-bold text-text-primary">Delete File</h3>
@@ -357,7 +385,7 @@ import {
 
       <!-- Preview Modal -->
       @if (showPreviewModal()) {
-        <div class="fixed inset-0 bg-black/90 z-50 flex flex-col" (click)="closePreviewModal()">
+        <div class="fixed inset-0 bg-black/90 z-modal-backdrop flex flex-col" (click)="closePreviewModal()">
           <div class="flex items-center justify-between p-4 text-white">
             <div class="flex items-center gap-3">
               <ng-icon [name]="isPdf(fileToPreview()?.mimeType || '') ? 'heroDocumentTextSolid' : 'heroPhotoSolid'" size="24"></ng-icon>
@@ -386,11 +414,62 @@ import {
         </div>
       }
 
+      <!-- Folder Create/Rename Modal -->
+      @if (showFolderModal()) {
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-md z-modal-backdrop flex items-center justify-center p-4" (click)="closeFolderModal()">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
+            <div class="p-6 border-b border-border-color">
+              <h3 class="text-lg font-bold text-text-primary">
+                {{ folderModalMode() === 'create' ? 'Create New Folder' : 'Rename Folder' }}
+              </h3>
+            </div>
+            <div class="p-6">
+              <label class="block text-sm font-medium text-text-secondary mb-2">Folder Name</label>
+              <input
+                type="text"
+                [(ngModel)]="newFolderName"
+                class="w-full px-4 py-2 rounded-xl border border-border-color bg-gray-50 focus:bg-white focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
+                placeholder="Enter folder name"
+                (keyup.enter)="confirmFolderAction()"
+                autofocus
+              />
+            </div>
+            <div class="p-6 border-t border-border-color flex justify-end gap-3">
+              <app-button variant="secondary" size="md" (clicked)="closeFolderModal()">Cancel</app-button>
+              <app-button variant="primary" size="md" (clicked)="confirmFolderAction()" [disabled]="!newFolderName.trim()">
+                {{ folderModalMode() === 'create' ? 'Create' : 'Rename' }}
+              </app-button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Folder Delete Confirmation Modal -->
+      @if (showFolderDeleteModal()) {
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-md z-modal-backdrop flex items-center justify-center p-4" (click)="closeFolderDeleteModal()">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
+            <div class="p-6 border-b border-border-color">
+              <h3 class="text-lg font-bold text-text-primary">Delete Folder</h3>
+            </div>
+            <div class="p-6">
+              <p class="text-text-secondary">
+                Are you sure you want to delete <strong class="text-text-primary">{{ folderToDelete()?.name }}</strong>?
+                All files and subfolders within it must be deleted first.
+              </p>
+            </div>
+            <div class="p-6 border-t border-border-color flex justify-end gap-3">
+              <app-button variant="secondary" size="md" (clicked)="closeFolderDeleteModal()">Cancel</app-button>
+              <app-button variant="danger" size="md" (clicked)="confirmFolderDelete()">Delete</app-button>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Folder Tree Template -->
       <ng-template #folderTree let-folder="folder" let-level="level">
         <div [style.paddingLeft.px]="level * 12">
           <button
-            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all"
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all group/folder"
             [class]="currentFolder()?.id === folder.id ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-text-primary'"
             (click)="navigateToFolder(folder.id)"
           >
@@ -404,10 +483,30 @@ import {
               <span class="text-xs bg-gray-200 dark:bg-gray-700 text-text-secondary px-1.5 py-0.5 rounded">
                 {{ folder.fileCount }}
               </span>
-            } @else if (folder.children.length) {
+            } @else if (folder.children?.length) {
               <span class="text-xs bg-gray-100 dark:bg-gray-800 text-text-secondary/70 px-1.5 py-0.5 rounded border border-border-color">
                 {{ folder.children.length }}
               </span>
+            }
+
+            <!-- Inline Folder Actions -->
+            @if (!['root', 'documents', 'years', 'year'].includes(folder.type)) {
+              <div class="flex items-center opacity-0 group-hover/folder:opacity-100 transition-opacity ml-1">
+                <button 
+                  class="p-1 hover:text-primary-600 transition-colors" 
+                  (click)="triggerFolderRename(folder); $event.stopPropagation()"
+                  title="Rename"
+                >
+                  <ng-icon name="heroPencilSquareSolid" size="12"></ng-icon>
+                </button>
+                <button 
+                  class="p-1 hover:text-red-500 transition-colors" 
+                  (click)="triggerFolderDelete(folder); $event.stopPropagation()"
+                  title="Delete"
+                >
+                  <ng-icon name="heroTrashSolid" size="12"></ng-icon>
+                </button>
+              </div>
             }
           </button>
           @if (folder.children.length) {
@@ -444,6 +543,35 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   fileToPreview = signal<FileNode | null>(null);
   newFileName = '';
   previewUrl = signal<string | null>(null);
+
+  // Folder modal states
+  showFolderModal = signal(false);
+  showFolderDeleteModal = signal(false);
+  folderModalMode = signal<'create' | 'rename'>('create');
+  folderToRename = signal<FolderNode | null>(null);
+  folderToDelete = signal<FolderNode | null>(null);
+  newFolderName = '';
+
+  // Modal states aggregation for overflow control
+  private isAnyModalOpen = computed(() =>
+    this.showRenameModal() ||
+    this.showDeleteModal() ||
+    this.showPreviewModal() ||
+    this.showFolderModal() ||
+    this.showFolderDeleteModal()
+  );
+
+  constructor() {
+    effect(() => {
+      if (typeof document !== 'undefined') {
+        if (this.isAnyModalOpen()) {
+          document.body.style.overflow = 'hidden';
+        } else {
+          document.body.style.overflow = '';
+        }
+      }
+    });
+  }
 
   ngOnInit() {
     const clientId = this.route.snapshot.paramMap.get('clientId');
@@ -677,6 +805,92 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
       day: 'numeric',
       year: 'numeric'
     });
+  }
+
+  // Folder CRUD
+  triggerFolderCreate() {
+    this.folderModalMode.set('create');
+    this.newFolderName = '';
+    this.showFolderModal.set(true);
+  }
+
+  triggerFolderRename(folder: FolderNode) {
+    this.folderModalMode.set('rename');
+    this.folderToRename.set(folder);
+    this.newFolderName = folder.name;
+    this.showFolderModal.set(true);
+  }
+
+  triggerFolderDelete(folder: FolderNode) {
+    this.folderToDelete.set(folder);
+    this.showFolderDeleteModal.set(true);
+  }
+
+  closeFolderModal() {
+    this.showFolderModal.set(false);
+    this.folderToRename.set(null);
+    this.newFolderName = '';
+  }
+
+  closeFolderDeleteModal() {
+    this.showFolderDeleteModal.set(false);
+    this.folderToDelete.set(null);
+  }
+
+  confirmFolderAction() {
+    if (!this.newFolderName.trim()) return;
+
+    if (this.folderModalMode() === 'create') {
+      const parentId = this.currentFolder()?.id;
+      if (!parentId) return;
+
+      this.workspaceService.createFolder(parentId, this.newFolderName.trim())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.toast.success('Folder created successfully');
+            this.closeFolderModal();
+            this.refresh();
+          },
+          error: (error) => {
+            this.toast.error('Failed to create folder', error.error?.message || error.message);
+          }
+        });
+    } else {
+      const folder = this.folderToRename();
+      if (!folder) return;
+
+      this.workspaceService.renameFolder(folder.id, this.newFolderName.trim())
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.toast.success('Folder renamed successfully');
+            this.closeFolderModal();
+            this.refresh();
+          },
+          error: (error) => {
+            this.toast.error('Failed to rename folder', error.error?.message || error.message);
+          }
+        });
+    }
+  }
+
+  confirmFolderDelete() {
+    const folder = this.folderToDelete();
+    if (!folder) return;
+
+    this.workspaceService.deleteFolder(folder.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.toast.success('Folder deleted successfully');
+          this.closeFolderDeleteModal();
+          this.refresh();
+        },
+        error: (error) => {
+          this.toast.error('Failed to delete folder', error.error?.message || error.message);
+        }
+      });
   }
 
   isImage(mimeType: string): boolean {

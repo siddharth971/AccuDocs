@@ -228,6 +228,37 @@ router.delete('/folders/:folderId', adminOnly, workspaceController.deleteFolder)
 
 /**
  * @swagger
+ * /workspace/folders/{folderId}/rename:
+ *   patch:
+ *     summary: Rename a folder
+ *     tags: [Workspace]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: folderId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *             properties:
+ *               name:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Folder renamed
+ */
+router.patch('/folders/:folderId/rename', adminOnly, workspaceController.renameFolder);
+
+/**
+ * @swagger
  * /workspace/clients/{clientId}/years:
  *   post:
  *     summary: Add year folder to client

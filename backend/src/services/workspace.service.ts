@@ -511,6 +511,62 @@ export const workspaceService = {
   },
 
   /**
+   * Rename a folder
+   */
+  async renameFolder(
+    folderId: string,
+    newName: string,
+    userId: string,
+    ip?: string
+  ): Promise<FolderNode> {
+    const folder = await folderRepository.findById(folderId);
+    if (!folder) {
+      throw new NotFoundError('Folder not found');
+    }
+
+    // Don't allow renaming root, documents, or years folders
+    if (['root', 'documents', 'years'].includes(folder.type)) {
+      throw new BadRequestError('Cannot rename system folders');
+    }
+
+    // Check if folder with same name exists in same parent
+    const existingFolder = await folderRepository.existsByNameInParent(
+      newName,
+      folder.parentId,
+      folder.clientId,
+      folderId
+    );
+    if (existingFolder) {
+      throw new ConflictError('A folder with this name already exists in this location');
+    }
+
+    const oldName = folder.name;
+    const newSlug = newName.toLowerCase().replace(/\s+/g, '_');
+
+    // Update folder
+    await folderRepository.update(folderId, {
+      name: newName,
+      slug: newSlug,
+      // Note: We don't update S3 prefix for now as it would require moving objects in S3
+      // For consistency, name and slug are updated in DB
+    });
+
+    // Log the action
+    await logRepository.create({
+      userId,
+      action: 'FOLDER_RENAMED',
+      description: `Renamed folder ${oldName} to ${newName}`,
+      ip,
+      metadata: { folderId, oldName, newName },
+    });
+
+    logger.info(`Folder renamed: ${oldName} -> ${newName}`);
+
+    const updatedFolder = await folderRepository.findById(folderId);
+    return this.formatFolderNode(updatedFolder!);
+  },
+
+  /**
    * Add year folder to client
    */
   async addYearFolder(clientId: string, year: string, userId: string, ip?: string): Promise<FolderNode> {

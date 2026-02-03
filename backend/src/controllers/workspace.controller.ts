@@ -239,6 +239,36 @@ export const workspaceController = {
   },
 
   /**
+   * Rename folder
+   */
+  async renameFolder(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { folderId } = req.params;
+      const { name } = req.body;
+      const userId = req.user!.id;
+      const ip = req.ip;
+
+      if (!name) {
+        res.status(400).json({
+          success: false,
+          message: 'New folder name is required',
+        });
+        return;
+      }
+
+      const result = await workspaceService.renameFolder(folderId, name, userId, ip);
+
+      res.json({
+        success: true,
+        message: 'Folder renamed successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
    * Add year folder to client
    */
   async addYearFolder(req: Request, res: Response, next: NextFunction): Promise<void> {

@@ -26,7 +26,7 @@ import { ToastContainerComponent } from '@shared/components/toast-container/toas
         <!-- Scrollable Content Area (offset for fixed header) -->
         <main class="flex-1 pt-24 px-6 pb-6 overflow-x-hidden bg-slate-50 dark:bg-slate-900">
           <!-- Full-width Content Container -->
-          <div class="w-full animate-fade-in">
+          <div class="w-full">
             <router-outlet></router-outlet>
           </div>
         </main>
