@@ -29,8 +29,9 @@ export class User extends Model<UserAttributes, UserCreationAttributes> implemen
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
 
+
   // Associations will be added later
-  public readonly clients?: any[];
+  declare public readonly clients?: any[];
 
   public toJSON(): object {
     const values = { ...this.get() };

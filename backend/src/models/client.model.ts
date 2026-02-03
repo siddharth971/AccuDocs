@@ -19,9 +19,10 @@ export class Client extends Model<ClientAttributes, ClientCreationAttributes> im
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
 
+
   // Associations
-  public readonly user?: any;
-  public readonly years?: any[];
+  declare public readonly user?: any;
+  declare public readonly years?: any[];
 }
 
 Client.init(
