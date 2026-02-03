@@ -15,6 +15,7 @@ export interface FolderNode {
   type: FolderType;
   s3Prefix: string;
   fileCount: number;
+  folderCount: number;
   totalSize: number;
   children: FolderNode[];
   files: FileNode[];
@@ -594,8 +595,9 @@ export const workspaceService = {
    * Format folder node for response
    */
   formatFolderNode(folder: Folder): FolderNode {
-    const files = (folder as any).files || [];
-    const children = (folder as any).children || [];
+    const data = folder.get ? folder.get({ plain: true }) : (folder as any);
+    const files = data.files || [];
+    const children = data.children || [];
 
     const formattedFiles: FileNode[] = files.map((f: any) => ({
       id: f.id,
@@ -622,6 +624,7 @@ export const workspaceService = {
       type: folder.type,
       s3Prefix: folder.s3Prefix,
       fileCount: files.length,
+      folderCount: (folder as any).folderCount !== undefined ? (folder as any).folderCount : formattedChildren.length,
       totalSize,
       children: formattedChildren,
       files: formattedFiles,

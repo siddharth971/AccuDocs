@@ -27,6 +27,7 @@ export interface FolderNode {
   type: FolderType;
   s3Prefix: string;
   fileCount: number;
+  folderCount: number;
   totalSize: number;
   children: FolderNode[];
   files: FileNode[];

@@ -157,8 +157,8 @@ import {
                       <h2 class="text-xl font-bold text-text-primary">{{ currentFolder()?.name || 'Root' }}</h2>
                       <p class="text-sm text-text-secondary">
                         {{ currentFolder()?.fileCount || 0 }} files
-                        @if (currentFolder()?.children?.length) {
-                          · {{ currentFolder()?.children?.length }} folders
+                        @if (currentFolder()?.folderCount || currentFolder()?.children?.length) {
+                          · {{ currentFolder()?.folderCount || currentFolder()?.children?.length }} folders
                         }
                       </p>
                     </div>
@@ -290,7 +290,7 @@ import {
                       </div>
                     }
                   </div>
-                } @else if (!currentFolder()?.children?.length) {
+                } @else if (!currentFolder()?.children?.length && !currentFolder()?.folderCount) {
                   <!-- Empty State -->
                   <div class="text-center py-16">
                     <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -410,7 +410,7 @@ import {
               </span>
             }
           </button>
-          @if (folder.children?.length) {
+          @if (folder.children.length) {
             @for (child of folder.children; track child.id) {
               <ng-container *ngTemplateOutlet="folderTree; context: { folder: child, level: level + 1 }"></ng-container>
             }
@@ -491,11 +491,34 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   }
 
   navigateToFolder(folderId: string) {
+    // If it's the root folder, use the cached workspace data to avoid API call
+    if (this.workspace()?.rootFolder.id === folderId) {
+      this.navigateToRoot();
+      return;
+    }
+
+    // Immediate UI update if folder is found in existing tree
+    if (this.workspace()) {
+      const folderInTree = this.findFolderInTree(this.workspace()!.rootFolder, folderId);
+      if (folderInTree) {
+        this.currentFolder.set(folderInTree);
+      }
+    }
+
     this.workspaceService.getFolderContents(folderId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          this.currentFolder.set(response.data.folder);
+          const folder = response.data.folder;
+          const current = this.currentFolder();
+
+          // Sticky subfolders: If API returns empty list but we already have subfolders in local state, preserve them
+          if (current && current.id === folder.id && (!folder.children || folder.children.length === 0) && current.children?.length > 0) {
+            folder.children = current.children;
+            folder.folderCount = current.children.length;
+          }
+
+          this.currentFolder.set(folder);
           this.breadcrumbs.set(response.data.breadcrumbs.slice(1)); // Remove root from breadcrumbs
         },
         error: (error) => {
@@ -662,5 +685,14 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
 
   isPdf(mimeType: string): boolean {
     return mimeType?.includes('pdf') || false;
+  }
+
+  private findFolderInTree(node: FolderNode, id: string): FolderNode | null {
+    if (node.id === id) return node;
+    for (const child of node.children) {
+      const found = this.findFolderInTree(child, id);
+      if (found) return found;
+    }
+    return null;
   }
 }

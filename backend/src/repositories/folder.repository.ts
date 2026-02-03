@@ -56,6 +56,7 @@ export const folderRepository = {
     if (!folder) return null;
 
     // Manually fetch children to ensure they are retrieved correctly
+    // This is more reliable for self-referencing associations in some Sequelize versions
     const children = await Folder.findAll({
       where: { parentId: id },
       order: [['name', 'ASC']],
@@ -68,6 +69,7 @@ export const folderRepository = {
     });
 
     folder.setDataValue('children' as any, children);
+    (folder as any).children = children;
 
     return folder as unknown as FolderWithDetails;
   },
