@@ -156,7 +156,7 @@ import {
                     <div>
                       <h2 class="text-xl font-bold text-text-primary">{{ currentFolder()?.name || 'Root' }}</h2>
                       <p class="text-sm text-text-secondary">
-                        {{ currentFolder()?.files?.length || 0 }} files
+                        {{ currentFolder()?.fileCount || 0 }} files
                         @if (currentFolder()?.children?.length) {
                           · {{ currentFolder()?.children?.length }} folders
                         }
@@ -206,7 +206,12 @@ import {
                         </div>
                         <div class="text-left overflow-hidden">
                           <p class="font-medium text-text-primary truncate">{{ folder.name }}</p>
-                          <p class="text-xs text-text-secondary">{{ folder.fileCount }} files</p>
+                          <p class="text-xs text-text-secondary">
+                            {{ folder.fileCount }} files
+                            @if (folder.children.length) {
+                              · {{ folder.children.length }} folders
+                            }
+                          </p>
                         </div>
                       </button>
                     }
@@ -398,6 +403,10 @@ import {
             @if (folder.fileCount > 0) {
               <span class="text-xs bg-gray-200 dark:bg-gray-700 text-text-secondary px-1.5 py-0.5 rounded">
                 {{ folder.fileCount }}
+              </span>
+            } @else if (folder.children.length) {
+              <span class="text-xs bg-gray-100 dark:bg-gray-800 text-text-secondary/70 px-1.5 py-0.5 rounded border border-border-color">
+                {{ folder.children.length }}
               </span>
             }
           </button>
