@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -22,131 +22,183 @@ import { NotificationService } from '@core/services/notification.service';
     MatProgressSpinnerModule,
   ],
   template: `
-    <div class="w-full space-y-6">
-      <!-- Header -->
-      <header class="flex items-center gap-4">
-        <a 
-          routerLink="/clients" 
-          class="p-2 rounded-lg bg-white dark:bg-slate-800 border border-border-color hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
-        >
-          <mat-icon class="text-slate-600 dark:text-slate-300">arrow_back</mat-icon>
-        </a>
-        <div>
-          <h1 class="text-2xl font-bold text-text-primary">{{ isEditMode() ? 'Edit Client' : 'Add New Client' }}</h1>
-          <p class="text-text-secondary mt-1">{{ isEditMode() ? 'Update client information' : 'Create a new client account' }}</p>
+    <div class="flex flex-col h-full bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-200/50 dark:border-slate-800/50">
+      
+      <!-- Premium Modal Header -->
+      <header class="px-8 py-6 border-b border-slate-100 dark:border-slate-800 relative bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center text-primary-600 dark:text-primary-400">
+              <mat-icon class="text-2xl">{{ isEditMode() ? 'edit' : 'person_add' }}</mat-icon>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">
+                {{ isEditMode() ? 'Edit Client' : 'Add New Client' }}
+              </h1>
+              <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                {{ isEditMode() ? 'Update the details for this client profile' : 'Create a fresh client profile in the system' }}
+              </p>
+            </div>
+          </div>
+          
+          <button 
+            type="button"
+            (click)="onCancel()"
+            class="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
       </header>
 
-      <!-- Form Card -->
-      <div class="bg-white dark:bg-slate-800 rounded-xl border border-border-color shadow-sm overflow-hidden">
+      <!-- Scrollable Form Content -->
+      <main class="flex-1 overflow-y-auto p-8">
         @if (isLoadingData()) {
           <div class="flex flex-col items-center justify-center py-20">
-            <mat-spinner diameter="40"></mat-spinner>
-            <p class="mt-4 text-text-secondary">Loading client data...</p>
+            <div class="w-16 h-16 border-4 border-primary-100 border-t-primary-600 rounded-full animate-spin"></div>
+            <p class="mt-4 text-slate-500 font-medium font-poppins">Gathering client data...</p>
           </div>
         } @else {
-          <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
-            <!-- Form Header -->
-            <div class="px-6 py-4 border-b border-border-color bg-slate-50 dark:bg-slate-900/50">
-              <h2 class="font-semibold text-text-primary">Client Information</h2>
-              <p class="text-sm text-text-secondary mt-1">Fill in the details below to {{ isEditMode() ? 'update' : 'create' }} the client.</p>
-            </div>
-
-            <!-- Form Fields -->
-            <div class="p-6 space-y-6">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Client Code -->
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-text-primary">
-                    Client Code <span class="text-danger-500">*</span>
-                  </label>
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <mat-icon class="text-slate-400 text-xl">badge</mat-icon>
-                    </div>
-                    <input 
-                      type="text"
-                      formControlName="code"
-                      placeholder="e.g., CLI001"
-                      class="block w-full pl-11 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    >
-                  </div>
-                  <p class="text-xs text-text-secondary">Unique identifier for the client</p>
-                  @if (clientForm.get('code')?.touched && clientForm.get('code')?.hasError('required')) {
-                    <p class="text-xs text-danger-500">Client code is required</p>
-                  }
+          <form [formGroup]="clientForm" (ngSubmit)="onSubmit()" class="space-y-8">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <!-- Client Code Field -->
+              <div class="space-y-2.5">
+                <label class="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                  <mat-icon class="text-lg opacity-60">tag</mat-icon>
+                  Client Code <span class="text-red-500">*</span>
+                </label>
+                <div class="relative group">
+                  <input 
+                    type="text"
+                    formControlName="code"
+                    placeholder="e.g. CLI001"
+                    class="form-input-premium"
+                    [class.error]="clientForm.get('code')?.touched && clientForm.get('code')?.invalid"
+                  >
+                  <div class="input-focus-border"></div>
                 </div>
-
-                <!-- Client Name -->
-                <div class="space-y-2">
-                  <label class="block text-sm font-medium text-text-primary">
-                    Full Name <span class="text-danger-500">*</span>
-                  </label>
-                  <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <mat-icon class="text-slate-400 text-xl">person</mat-icon>
-                    </div>
-                    <input 
-                      type="text"
-                      formControlName="name"
-                      placeholder="Enter client's full name"
-                      class="block w-full pl-11 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
-                    >
-                  </div>
-                  @if (clientForm.get('name')?.touched && clientForm.get('name')?.hasError('required')) {
-                    <p class="text-xs text-danger-500">Name is required</p>
-                  }
-                </div>
+                @if (clientForm.get('code')?.touched && clientForm.get('code')?.hasError('required')) {
+                  <p class="text-xs text-red-500 font-medium mt-1 ml-1 flex items-center gap-1">
+                    <mat-icon class="text-sm">error_outline</mat-icon> Client code is required
+                  </p>
+                }
               </div>
 
-              <!-- Mobile Number - Full Width -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-text-primary">
-                  Mobile Number <span class="text-danger-500">*</span>
+              <!-- Full Name Field -->
+              <div class="space-y-2.5">
+                <label class="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                  <mat-icon class="text-lg opacity-60">person</mat-icon>
+                  Full Name <span class="text-red-500">*</span>
                 </label>
-                <div class="relative max-w-md">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <mat-icon class="text-slate-400 text-xl">phone</mat-icon>
-                  </div>
+                <div class="relative group">
+                  <input 
+                    type="text"
+                    formControlName="name"
+                    placeholder="John Doe"
+                    class="form-input-premium"
+                    [class.error]="clientForm.get('name')?.touched && clientForm.get('name')?.invalid"
+                  >
+                  <div class="input-focus-border"></div>
+                </div>
+                @if (clientForm.get('name')?.touched && clientForm.get('name')?.hasError('required')) {
+                  <p class="text-xs text-red-500 font-medium mt-1 ml-1 flex items-center gap-1">
+                    <mat-icon class="text-sm">error_outline</mat-icon> Name is required
+                  </p>
+                }
+              </div>
+
+              <!-- Mobile Number Field -->
+              <div class="space-y-2.5 md:col-span-2">
+                <label class="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 ml-1">
+                  <mat-icon class="text-lg opacity-60">call</mat-icon>
+                  Mobile Number <span class="text-red-500">*</span>
+                </label>
+                <div class="relative group max-w-md">
                   <input 
                     type="tel"
                     formControlName="mobile"
-                    placeholder="+919876543210"
-                    class="block w-full pl-11 pr-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                    placeholder="+91 00000 00000"
+                    class="form-input-premium"
+                    [class.error]="clientForm.get('mobile')?.touched && clientForm.get('mobile')?.invalid"
                   >
+                  <div class="input-focus-border"></div>
                 </div>
-                <p class="text-xs text-text-secondary">Include country code (e.g., +91 for India)</p>
+                <p class="text-xs text-slate-400 mt-1 ml-1">Format: +[CountryCode] [Number]</p>
                 @if (clientForm.get('mobile')?.touched && clientForm.get('mobile')?.hasError('required')) {
-                  <p class="text-xs text-danger-500">Mobile number is required</p>
+                  <p class="text-xs text-red-500 font-medium mt-1 ml-1 flex items-center gap-1">
+                    <mat-icon class="text-sm">error_outline</mat-icon> Mobile number is required
+                  </p>
                 }
               </div>
             </div>
 
-            <!-- Form Actions -->
-            <div class="px-6 py-4 border-t border-border-color bg-slate-50 dark:bg-slate-900/50 flex items-center justify-end gap-3">
-              <a routerLink="/clients" class="btn-secondary">
+            <!-- Footer Actions -->
+            <div class="pt-8 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-4">
+              <button 
+                type="button" 
+                (click)="onCancel()" 
+                class="px-6 py-2 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all duration-200"
+              >
                 Cancel
-              </a>
+              </button>
+              
               <button 
                 type="submit" 
                 [disabled]="clientForm.invalid || isSubmitting()"
-                class="btn-primary"
+                class="flex items-center gap-2 px-8 py-3 rounded-xl bg-gradient-to-r from-primary-600 to-indigo-600 text-white font-bold text-sm shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
               >
                 @if (isSubmitting()) {
-                  <mat-spinner diameter="18" class="[&_circle]:stroke-white"></mat-spinner>
-                  <span>{{ isEditMode() ? 'Saving...' : 'Creating...' }}</span>
+                  <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>{{ isEditMode() ? 'Updating...' : 'Creating...' }}</span>
                 } @else {
-                  <mat-icon class="text-lg">{{ isEditMode() ? 'save' : 'add' }}</mat-icon>
+                  <mat-icon>{{ isEditMode() ? 'check_circle' : 'add_circle' }}</mat-icon>
                   <span>{{ isEditMode() ? 'Save Changes' : 'Create Client' }}</span>
                 }
               </button>
             </div>
           </form>
         }
-      </div>
+      </main>
     </div>
   `,
-  styles: [``],
+  styles: [`
+    .form-input-premium {
+      @apply w-full px-4 py-4 rounded-xl border border-secondary-200 dark:border-secondary-700 bg-secondary-50/50 dark:bg-secondary-900/50 text-secondary-900 dark:text-white placeholder-secondary-400 focus:outline-none transition-all duration-300 font-medium;
+    }
+
+    .form-input-premium:focus {
+      @apply bg-white dark:bg-secondary-900 border-primary-500;
+    }
+
+    .input-focus-border {
+      @apply absolute -inset-0.5 bg-gradient-to-r from-primary-500 to-indigo-500 rounded-xl opacity-0 blur-sm transition-opacity duration-300 pointer-events-none -z-10;
+    }
+
+    .group:focus-within .input-focus-border {
+      @apply opacity-40;
+    }
+
+    .form-input-premium.error {
+      @apply border-danger-300 bg-danger-50/30 dark:bg-danger-900/10 dark:border-danger-900/50;
+    }
+
+    .premium-button {
+      @apply flex items-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-800 text-white font-bold text-sm shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none;
+    }
+
+    /* Custom Scrollbar for Form content */
+    main::-webkit-scrollbar {
+      width: 6px;
+    }
+    main::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 10px;
+    }
+    .dark main::-webkit-scrollbar-thumb {
+      background: #334155;
+    }
+  `],
 })
 export class ClientFormComponent implements OnInit {
   private fb = inject(FormBuilder);
@@ -159,6 +211,22 @@ export class ClientFormComponent implements OnInit {
   isLoadingData = signal(false);
   isSubmitting = signal(false);
   private clientId: string | null = null;
+
+  @Input() isModal = false;
+  @Input() closeCallback?: () => void;
+
+  // Modal Input
+  @Input() set initialData(data: any) {
+    if (data) {
+      this.isEditMode.set(true);
+      this.clientId = data.id;
+      this.clientForm.patchValue({
+        code: data.code,
+        name: data.user?.name || data.name,
+        mobile: data.user?.mobile || data.mobile,
+      });
+    }
+  }
 
   clientForm: FormGroup = this.fb.group({
     code: ['', [Validators.required]],
@@ -221,10 +289,22 @@ export class ClientFormComponent implements OnInit {
         this.notificationService.success(
           this.isEditMode() ? 'Client updated successfully' : 'Client created successfully'
         );
-        this.router.navigate(['/clients']);
+        if (this.isModal && this.closeCallback) {
+          this.closeCallback();
+        } else {
+          this.router.navigate(['/clients']);
+        }
       },
       error: () => this.isSubmitting.set(false),
       complete: () => this.isSubmitting.set(false),
     });
+  }
+
+  onCancel(): void {
+    if (this.isModal && this.closeCallback) {
+      this.closeCallback();
+    } else {
+      this.router.navigate(['/clients']);
+    }
   }
 }

@@ -18,7 +18,7 @@ import {
   standalone: true,
   imports: [CommonModule, NgIconComponent],
   template: `
-    <header class="fixed top-0 right-0 left-20 h-20 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between px-6 z-header shadow-sm">
+    <header class="fixed top-0 right-0 left-20 h-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-b border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between px-6 z-header transition-all duration-300">
       
       <!-- Search Bar -->
       <div class="flex-1 max-w-xl hidden md:block">

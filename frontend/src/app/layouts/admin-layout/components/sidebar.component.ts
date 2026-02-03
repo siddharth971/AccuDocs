@@ -17,7 +17,7 @@ import { AuthService } from '@core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, NgIconComponent],
   template: `
-    <aside class="fixed z-30 inset-y-0 left-0 w-20 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col">
+    <aside class="fixed z-sidebar inset-y-0 left-0 w-20 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col">
       <!-- Logo Section -->
       <div class="h-20 flex items-center justify-center border-b border-slate-100 dark:border-slate-800">
         <div class="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">

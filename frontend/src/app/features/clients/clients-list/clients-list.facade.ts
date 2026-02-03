@@ -66,6 +66,14 @@ export class ClientsFacade {
         // Ideally show a toast here, but for now console error is fine 
         // as per current context constraints.
       }
+
     });
+  }
+
+  openCreateModal() {
+    // This method is called by the UI when the "Add" button is clicked.
+    // In a real application, this would open a modal dialog or navigate to a create page.
+    // For now, we can just log a message or implement a simple alert.
+    console.log('Open Create Modal');
   }
 }
