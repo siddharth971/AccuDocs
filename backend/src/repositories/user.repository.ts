@@ -23,8 +23,8 @@ export const userRepository = {
     return User.findOne({ where: { mobile } });
   },
 
-  async create(data: UserCreationAttributes): Promise<User> {
-    return User.create(data);
+  async create(data: UserCreationAttributes, options?: any): Promise<User> {
+    return User.create(data, options) as unknown as Promise<User>;
   },
 
   async update(id: string, data: Partial<UserAttributes>): Promise<User | null> {

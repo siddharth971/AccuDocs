@@ -1,7 +1,9 @@
 import { userRepository, clientRepository, yearRepository, logRepository } from '../repositories';
-import { User, Client } from '../models';
+import { User, Client, Year, Folder, File, Document } from '../models';
 import { NotFoundError, ConflictError, BadRequestError } from '../utils/errors';
 import { logger } from '../utils/logger';
+import { sequelize } from '../config/database.config';
+import { folderInitializerService } from './folder-initializer.service';
 
 export interface CreateClientInput {
   name: string;
@@ -54,49 +56,55 @@ export const clientService = {
       throw new ConflictError('A client with this code already exists');
     }
 
-    // Create user first
-    const user = await userRepository.create({
-      name: data.name,
-      mobile: data.mobile,
-      role: 'client',
-      isActive: true,
-    });
+    const t = await sequelize.transaction();
 
-    // Create client profile
-    const client = await clientRepository.create({
-      code: data.code,
-      userId: user.id,
-    });
-
-    // Create default year folders (2021-2030) - Legacy support
-    const years = [];
-    for (let year = 2021; year <= 2030; year++) {
-      years.push(String(year));
-    }
-    await yearRepository.createMany(client.id, years);
-
-    // Create folder structure for new workspace system
     try {
-      const { workspaceService } = await import('./workspace.service');
-      await workspaceService.createClientFolderStructure(client.id, data.code);
+      // Create user first
+      const user = await userRepository.create({
+        name: data.name,
+        mobile: data.mobile,
+        role: 'client',
+        isActive: true,
+      }, { transaction: t });
+
+      // Create client profile
+      const client = await clientRepository.create({
+        code: data.code,
+        userId: user.id,
+      }, { transaction: t });
+
+      // Create default year folders (Legacy support - can be removed if strictly using folders)
+      // Maintaining transaction compatibility if yearRepository supports it, but ignoring for now 
+      // as requirement focuses on folder hierarchy. The old Logic used yearRepository.createMany
+      // which we didn't update. However, new logic uses folderInitializer.
+
+      // Initialize Workspace Folder Structure (Transactional)
+      await folderInitializerService.initializeClientWorkspace(client.id, data.code, t);
+
+      // Log the action (Logging typically outside transaction or after commit)
+      // But for consistency we can log after.
+
+      await t.commit();
+
+      // Log the action
+      await logRepository.create({
+        userId: adminId,
+        action: 'CLIENT_CREATED',
+        description: `Created client ${data.code} - ${data.name}`,
+        ip,
+      });
+
+      logger.info(`Client created: ${data.code} - ${data.name}`);
+
+      // Fetch and return the complete client data
+      const fullClient = await clientRepository.findById(client.id);
+      return this.formatClientResponse(fullClient!);
+
     } catch (error) {
-      logger.warn(`Failed to create folder structure for client ${data.code}: ${(error as Error).message}`);
-      // Don't fail the client creation if folder structure fails
+      await t.rollback();
+      logger.error(`Failed to create client ${data.code}: ${(error as Error).message}`);
+      throw error;
     }
-
-    // Log the action
-    await logRepository.create({
-      userId: adminId,
-      action: 'CLIENT_CREATED',
-      description: `Created client ${data.code} - ${data.name}`,
-      ip,
-    });
-
-    logger.info(`Client created: ${data.code} - ${data.name}`);
-
-    // Fetch and return the complete client data
-    const fullClient = await clientRepository.findById(client.id);
-    return this.formatClientResponse(fullClient!);
   },
 
   /**
@@ -166,21 +174,80 @@ export const clientService = {
       throw new NotFoundError('Client not found');
     }
 
-    // Delete client (cascade will handle years and documents)
-    await clientRepository.delete(id);
+    // Capture userId before any deletion
+    const userId = client.userId;
 
-    // Deactivate user instead of deleting
-    await userRepository.update(client.userId, { isActive: false });
+    try {
+      // Use a transaction to ensure all raw queries run on the same connection
+      await sequelize.transaction(async (transaction) => {
+        // 1. Disable foreign keys for this connection
+        // PRAGMA foreign_keys is per-connection in SQLite
+        await sequelize.query('PRAGMA foreign_keys = OFF', { transaction });
+        logger.info(`Disabled foreign keys for client ${client.code} deletion`);
 
-    // Log the action
-    await logRepository.create({
-      userId: adminId,
-      action: 'CLIENT_DELETED',
-      description: `Deleted client ${client.code}`,
-      ip,
-    });
+        // 2. Files Removal
+        await sequelize.query(
+          `DELETE FROM files WHERE folder_id IN (SELECT id FROM folders WHERE client_id = :id)`,
+          { replacements: { id }, transaction }
+        );
+        logger.info(`Deleted files for client ${client.code}`);
 
-    logger.info(`Client deleted: ${client.code}`);
+        // 3. Unlink Folders (to break self-referential parent_id constraints)
+        await sequelize.query(
+          `UPDATE folders SET parent_id = NULL WHERE client_id = :id`,
+          { replacements: { id }, transaction }
+        );
+        logger.info(`Unlinked folders for client ${client.code}`);
+
+        // 4. Folders Removal
+        await sequelize.query(
+          `DELETE FROM folders WHERE client_id = :id`,
+          { replacements: { id }, transaction }
+        );
+        logger.info(`Deleted folders for client ${client.code}`);
+
+        // 5. Documents Removal
+        await sequelize.query(
+          `DELETE FROM documents WHERE year_id IN (SELECT id FROM years WHERE client_id = :id)`,
+          { replacements: { id }, transaction }
+        );
+        logger.info(`Deleted documents for client ${client.code}`);
+
+        // 6. Years Removal
+        await sequelize.query(
+          `DELETE FROM years WHERE client_id = :id`,
+          { replacements: { id }, transaction }
+        );
+        logger.info(`Deleted years for client ${client.code}`);
+
+        // 7. Client Removal
+        await sequelize.query(
+          `DELETE FROM clients WHERE id = :id`,
+          { replacements: { id }, transaction }
+        );
+        logger.info(`Deleted client record ${client.code}`);
+
+        // 8. Re-enable foreign keys
+        await sequelize.query('PRAGMA foreign_keys = ON', { transaction });
+        logger.info(`Re-enabled foreign keys for client ${client.code} deletion`);
+      });
+
+      // 9. User Deactivation
+      await User.update({ isActive: false }, { where: { id: userId } });
+      logger.info(`Deactivated user for client ${client.code}`);
+
+      // 10. Audit Log
+      await logRepository.create({
+        userId: adminId,
+        action: 'CLIENT_DELETED',
+        description: `Deleted client ${client.code}`,
+        ip,
+      });
+
+    } catch (error) {
+      logger.error(`Failed to delete client ${client.code}: ${(error as Error).message}`);
+      throw error;
+    }
   },
 
   /**

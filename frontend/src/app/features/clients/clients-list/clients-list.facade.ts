@@ -50,4 +50,22 @@ export class ClientsFacade {
   reload() {
     this.clientResource.reload();
   }
+
+  async deleteClient(id: string) {
+    // We can't really await the observable without firstValueFrom, 
+    // but typically we'd just subscribe or use firstValueFrom.
+    // Let's use firstValueFrom for a cleaner async/await flow.
+    // However, I need to make sure I import firstValueFrom.
+    // Actually, I can just subscribe since we just want to reload after completion.
+    this.clientService.deleteClient(id).subscribe({
+      next: () => {
+        this.reload();
+      },
+      error: (err) => {
+        console.error('Failed to delete client', err);
+        // Ideally show a toast here, but for now console error is fine 
+        // as per current context constraints.
+      }
+    });
+  }
 }

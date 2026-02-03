@@ -166,7 +166,11 @@ import {
           <button class="p-1.5 text-text-secondary hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Edit">
             <ng-icon name="heroPencilSquareSolid" size="18"></ng-icon>
           </button>
-          <button class="p-1.5 text-text-secondary hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+          <button 
+            (click)="onDelete(row)"
+            class="p-1.5 text-text-secondary hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" 
+            title="Delete"
+          >
             <ng-icon name="heroTrashSolid" size="18"></ng-icon>
           </button>
         </div>
@@ -189,5 +193,11 @@ export class ClientsListComponent {
       { header: 'Status', field: 'status', template: this.statusTemplate() },
       { header: 'Actions', field: 'actions', template: this.actionsTemplate() },
     ];
+  }
+
+  onDelete(client: any) {
+    if (confirm(`Are you sure you want to delete client ${client.code}?`)) {
+      this.facade.deleteClient(client.id);
+    }
   }
 }

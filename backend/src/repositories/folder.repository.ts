@@ -19,8 +19,8 @@ export const folderRepository = {
   /**
    * Create a new folder
    */
-  async create(data: FolderCreationAttributes): Promise<Folder> {
-    return Folder.create(data);
+  async create(data: FolderCreationAttributes, options?: any): Promise<Folder> {
+    return Folder.create(data, options) as unknown as Promise<Folder>;
   },
 
   /**
@@ -34,7 +34,7 @@ export const folderRepository = {
    * Find folder by ID
    */
   async findById(id: string): Promise<FolderWithDetails | null> {
-    return Folder.findByPk(id, {
+    const folder = await Folder.findByPk(id, {
       include: [
         {
           model: Client,
@@ -46,22 +46,30 @@ export const folderRepository = {
           as: 'parent',
         },
         {
-          model: Folder,
-          as: 'children',
-          include: [
-            {
-              model: File,
-              as: 'files',
-            },
-          ],
-        },
-        {
           model: File,
           as: 'files',
           include: [{ model: User, as: 'uploader', attributes: ['id', 'name'] }],
         },
       ],
-    }) as Promise<FolderWithDetails | null>;
+    });
+
+    if (!folder) return null;
+
+    // Manually fetch children to ensure they are retrieved correctly
+    const children = await Folder.findAll({
+      where: { parentId: id },
+      order: [['name', 'ASC']],
+      include: [
+        {
+          model: File,
+          as: 'files',
+        },
+      ],
+    });
+
+    folder.setDataValue('children' as any, children);
+
+    return folder as unknown as FolderWithDetails;
   },
 
   /**
@@ -205,44 +213,68 @@ export const folderRepository = {
    * Get folder tree for a client (full hierarchy)
    */
   async getClientFolderTree(clientId: string): Promise<FolderWithDetails | null> {
-    // Get root folder with 3 levels of nesting (root -> documents/years -> year folders)
-    const rootFolder = await Folder.findOne({
-      where: { clientId, type: 'root' },
+    // 1. Get Root
+    const rootFolder = await Folder.findOne({ where: { clientId, type: 'root' } });
+    if (!rootFolder) return null;
+
+    // 2. Get Level 1 children (Documents, Years)
+    const l1Children = await Folder.findAll({
+      where: { parentId: rootFolder.id },
+      order: [['name', 'ASC']],
       include: [
         {
-          model: Folder,
-          as: 'children',
-          separate: true,
-          order: [['name', 'ASC']],
-          include: [
-            {
-              model: Folder,
-              as: 'children',
-              separate: true,
-              order: [['name', 'ASC']],
-              include: [
-                {
-                  model: File,
-                  as: 'files',
-                  separate: true,
-                  order: [['createdAt', 'DESC']],
-                  include: [{ model: User, as: 'uploader', attributes: ['id', 'name'] }],
-                },
-              ],
-            },
-            {
-              model: File,
-              as: 'files',
-              separate: true,
-              order: [['createdAt', 'DESC']],
-              include: [{ model: User, as: 'uploader', attributes: ['id', 'name'] }],
-            },
-          ],
+          model: File,
+          as: 'files',
+          order: [['createdAt', 'DESC']],
+          include: [{ model: User, as: 'uploader', attributes: ['id', 'name'] }],
         },
       ],
     });
 
-    return rootFolder as FolderWithDetails | null;
+    // 3. Get Level 2 children (Subfolders like 2015, 2016)
+    const l1Ids = l1Children.map((c) => c.id);
+    let l2Children: Folder[] = [];
+
+    if (l1Ids.length > 0) {
+      l2Children = await Folder.findAll({
+        where: { parentId: l1Ids },
+        order: [['name', 'ASC']],
+        include: [
+          {
+            model: File,
+            as: 'files',
+            order: [['createdAt', 'DESC']],
+            include: [{ model: User, as: 'uploader', attributes: ['id', 'name'] }],
+          },
+        ],
+      });
+    }
+
+    // 4. Assemble Tree
+    // Map L2 children to their parents
+    const childrenMap = new Map<string, Folder[]>();
+    l2Children.forEach((c) => {
+      // Need to cast to any to read parent_id if using raw attributes or parentId via model
+      // c.parentId should be populated
+      const pId = c.parentId;
+      if (pId) {
+        if (!childrenMap.has(pId)) childrenMap.set(pId, []);
+        childrenMap.get(pId)!.push(c);
+      }
+    });
+
+    // Attach L2 to L1
+    l1Children.forEach((c) => {
+      const children = childrenMap.get(c.id) || [];
+      c.setDataValue('children' as any, children);
+      (c as any).children = children; // Explicit property assignment for some serialization cases
+    });
+
+    // Attach L1 to Root
+    rootFolder.setDataValue('children' as any, l1Children);
+    (rootFolder as any).children = l1Children;
+
+    return rootFolder as unknown as FolderWithDetails;
   },
 
   /**

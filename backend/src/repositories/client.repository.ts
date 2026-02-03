@@ -42,8 +42,8 @@ export const clientRepository = {
     });
   },
 
-  async create(data: ClientCreationAttributes): Promise<Client> {
-    return Client.create(data);
+  async create(data: ClientCreationAttributes, options?: any): Promise<Client> {
+    return Client.create(data, options) as unknown as Promise<Client>;
   },
 
   async update(id: string, data: Partial<ClientAttributes>): Promise<Client | null> {

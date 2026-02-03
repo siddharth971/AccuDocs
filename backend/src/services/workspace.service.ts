@@ -1,15 +1,12 @@
 import { folderRepository, fileRepository, clientRepository, logRepository } from '../repositories';
 import { s3Helpers } from '../config';
+import { folderConfig } from '../config/folder.config';
+import { folderInitializerService } from './folder-initializer.service';
 import { Folder, File, FolderType } from '../models';
 import { NotFoundError, BadRequestError, ForbiddenError, ConflictError } from '../utils/errors';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 
-// Default years to create for new clients
-const DEFAULT_YEARS = [
-  '2015', '2016', '2017', '2018', '2019', '2020',
-  '2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030'
-];
 
 export interface FolderNode {
   id: string;
@@ -59,51 +56,7 @@ export const workspaceService = {
    * Create folder structure for a new client
    */
   async createClientFolderStructure(clientId: string, clientCode: string): Promise<void> {
-    logger.info(`Creating folder structure for client: ${clientCode}`);
-
-    // Create root folder
-    const rootFolder = await folderRepository.create({
-      name: clientCode,
-      slug: clientCode.toLowerCase().replace(/\s+/g, '_'),
-      type: 'root',
-      clientId,
-      parentId: null,
-      s3Prefix: `clients/${clientCode}/`,
-    });
-
-    // Create Documents folder
-    const documentsFolder = await folderRepository.create({
-      name: 'Documents',
-      slug: 'documents',
-      type: 'documents',
-      clientId,
-      parentId: rootFolder.id,
-      s3Prefix: `clients/${clientCode}/Documents/`,
-    });
-
-    // Create Years folder
-    const yearsFolder = await folderRepository.create({
-      name: 'Years',
-      slug: 'years',
-      type: 'years',
-      clientId,
-      parentId: rootFolder.id,
-      s3Prefix: `clients/${clientCode}/Years/`,
-    });
-
-    // Create individual year folders
-    for (const year of DEFAULT_YEARS) {
-      await folderRepository.create({
-        name: year,
-        slug: year,
-        type: 'year',
-        clientId,
-        parentId: yearsFolder.id,
-        s3Prefix: `clients/${clientCode}/Years/${year}/`,
-      });
-    }
-
-    logger.info(`✅ Folder structure created for client: ${clientCode}`);
+    return folderInitializerService.initializeClientWorkspace(clientId, clientCode);
   },
 
   /**
@@ -163,7 +116,9 @@ export const workspaceService = {
     const existingYearNames = new Set(existingYears.map((y: any) => y.name));
 
     // Create missing years
-    for (const year of DEFAULT_YEARS) {
+    const { startYear, endYear } = folderConfig;
+    for (let y = startYear; y <= endYear; y++) {
+      const year = y.toString();
       if (!existingYearNames.has(year)) {
         await folderRepository.create({
           name: year,
