@@ -10,7 +10,7 @@ const sequelizeOptions: Options = {
   port: config.database.port,
   dialect: dialect,
   storage: dialect === 'sqlite' ? storage : undefined, // Only for SQLite
-  logging: config.nodeEnv === 'development' ? (msg) => logger.debug(msg) : false,
+  logging: false,
   pool: {
     max: config.database.pool.max,
     min: config.database.pool.min,

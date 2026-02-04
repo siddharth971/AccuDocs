@@ -354,9 +354,15 @@ export const workspaceService = {
       throw new NotFoundError('File not found');
     }
 
-    const folder = file.folder;
+    let folder: any = file.folder;
     if (!folder) {
-      throw new NotFoundError('Folder not found');
+      if (file.folderId) {
+        folder = await folderRepository.findById(file.folderId);
+      }
+
+      if (!folder) {
+        throw new NotFoundError('Folder not found');
+      }
     }
 
     // Check if new name conflicts

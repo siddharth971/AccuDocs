@@ -139,6 +139,7 @@ export const workspaceController = {
   async renameFile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { fileId } = req.params;
+      logger.info(`[b] Controller renameFile called for ${fileId}`);
       const { name } = req.body;
       const userId = req.user!.userId;
       const ip = req.ip;
