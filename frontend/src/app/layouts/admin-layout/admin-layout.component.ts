@@ -19,25 +19,17 @@ import { ToastContainerComponent } from '@shared/components/toast-container/toas
       <app-sidebar></app-sidebar>
 
       <!-- Main Content Wrapper (offset for sidebar) -->
-      <div class="ml-20 flex flex-col min-h-screen">
+      <div class="ml-20 flex flex-col h-screen overflow-hidden">
         <!-- Sticky Header -->
         <app-header></app-header>
 
         <!-- Scrollable Content Area (offset for fixed header) -->
-        <main class="flex-1 pt-24 px-6 pb-6 overflow-x-hidden bg-slate-50 dark:bg-slate-900">
+        <main class="flex-1 flex flex-col pt-24 px-8 pb-8 bg-slate-50 dark:bg-slate-900 transition-all duration-300 min-h-0">
           <!-- Full-width Content Container -->
-          <div class="w-full">
+          <div class="w-full h-full min-h-0">
             <router-outlet></router-outlet>
           </div>
         </main>
-
-        <!-- Footer -->
-        <footer class="shrink-0 px-6 py-4 border-t border-border-subtle bg-white dark:bg-slate-800">
-          <div class="flex items-center justify-between text-sm text-text-muted">
-            <span>© 2026 AccuDocs. All rights reserved.</span>
-            <span>Version 1.0.0</span>
-          </div>
-        </footer>
       </div>
 
       <!-- Toast Notifications -->

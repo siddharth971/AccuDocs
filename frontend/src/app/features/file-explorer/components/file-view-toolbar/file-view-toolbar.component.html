@@ -1,22 +1,33 @@
 <div
-  class="flex items-center justify-between px-4 py-1.5 bg-white dark:bg-slate-900 transition-colors duration-200 flex-wrap gap-2"
+  class="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 flex-wrap gap-2 shadow-sm"
   *ngIf="viewState$ | async as state">
-  <div class="flex items-center gap-2">
+
+  <div class="flex items-center gap-1">
+    <!-- Back Button -->
+    <app-button variant="ghost" size="sm" [disabled]="!canGoBack()" (clicked)="onBack()" matTooltip="Go back"
+      class="!px-2">
+      <ng-icon name="heroArrowLeftSolid" size="18" icon-left></ng-icon>
+    </app-button>
+
+    <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
+
     <!-- View Options Dropdown -->
-    <button mat-button [matMenuTriggerFor]="viewMenu" class="!flex !items-center !gap-1">
-      <mat-icon>{{ getCurrentIcon(state.viewMode) }}</mat-icon>
-      <span>View</span>
-      <mat-icon>arrow_drop_down</mat-icon>
+    <button mat-button [matMenuTriggerFor]="viewMenu" class="toolbar-dropdown-btn">
+      <ng-icon name="heroSquares2x2Solid" class="mr-1.5" size="18"></ng-icon>
+      <span class="text-sm font-medium">View</span>
+      <ng-icon name="heroChevronDownSolid" size="14" class="ml-1 opacity-50"></ng-icon>
     </button>
     <mat-menu #viewMenu="matMenu" class="file-explorer-menu">
-      <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Layout</div>
+      <div class="px-4 py-2 text-xs font-bold text-slate-400 uppercase tracking-wider">Layout</div>
       <button mat-menu-item *ngFor="let mode of viewModes" (click)="setView(mode.value)"
-        [class.bg-gray-100]="state.viewMode === mode.value">
+        [class.is-active]="state.viewMode === mode.value">
         <mat-icon>{{ mode.icon }}</mat-icon>
         <span>{{ mode.label }}</span>
       </button>
 
-      <div class="px-4 py-2 mt-2 text-xs font-semibold text-gray-500 uppercase border-t border-gray-100">Panes</div>
+      <div
+        class="px-4 py-2 mt-2 text-xs font-bold text-slate-400 uppercase tracking-wider border-t border-slate-100 dark:border-slate-800">
+        Panes</div>
       <button mat-menu-item (click)="toggleDetails(state.showDetails)">
         <mat-icon>{{ state.showDetails ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
         <span>Details Pane</span>
@@ -28,10 +39,10 @@
     </mat-menu>
 
     <!-- Sort Dropdown -->
-    <button mat-button [matMenuTriggerFor]="sortMenu" class="!flex !items-center !gap-1">
-      <mat-icon>sort</mat-icon>
-      <span>Sort</span>
-      <mat-icon>arrow_drop_down</mat-icon>
+    <button mat-button [matMenuTriggerFor]="sortMenu" class="toolbar-dropdown-btn">
+      <ng-icon name="heroArrowsUpDownSolid" class="mr-1.5" size="18"></ng-icon>
+      <span class="text-sm font-medium">Sort</span>
+      <ng-icon name="heroChevronDownSolid" size="14" class="ml-1 opacity-50"></ng-icon>
     </button>
     <mat-menu #sortMenu="matMenu" class="file-explorer-menu">
       <button mat-menu-item (click)="sort('name')">Name</button>
@@ -41,13 +52,23 @@
     </mat-menu>
   </div>
 
-  <div class="flex items-center gap-2">
-    <button mat-icon-button (click)="refresh()" matTooltip="Refresh">
-      <mat-icon>refresh</mat-icon>
-    </button>
-    <button class="btn-primary !py-1.5 !px-3 shadow-md hover:shadow-lg transition-all">
-      <mat-icon class="!mr-1 !h-5 !w-5 !text-lg">upload</mat-icon>
-      Upload
-    </button>
+  <div class="flex items-center gap-3">
+    <!-- Refresh Button -->
+    <app-button variant="secondary" size="sm" (clicked)="onRefresh()" matTooltip="Refresh contents">
+      <ng-icon name="heroArrowPathSolid" class="md:mr-2" size="16" icon-left></ng-icon>
+      <span class="hidden md:inline">Refresh</span>
+    </app-button>
+
+    <!-- New Folder Button -->
+    <app-button variant="secondary" size="sm" (clicked)="onNewFolder()" matTooltip="Create new folder">
+      <ng-icon name="heroFolderPlusSolid" class="md:mr-2" size="16" icon-left></ng-icon>
+      <span class="hidden md:inline">New Folder</span>
+    </app-button>
+
+    <!-- Upload Button -->
+    <app-button variant="primary" size="sm" (clicked)="onUpload()" matTooltip="Upload files">
+      <ng-icon name="heroArrowUpTraySolid" class="md:mr-2" size="16" icon-left></ng-icon>
+      <span class="hidden md:inline">Upload</span>
+    </app-button>
   </div>
 </div>

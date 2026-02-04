@@ -89,40 +89,14 @@ import { MatIconModule } from '@angular/material/icon';
     })
   ],
   template: `
-    <div class="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <!-- Header Section -->
-      <header class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div class="flex items-center gap-2 text-sm text-text-secondary mb-2">
-            <a routerLink="/clients" class="hover:text-primary-600 transition-colors">Clients</a>
-            <ng-icon name="heroChevronRightSolid" size="14"></ng-icon>
-            <span class="text-text-primary font-medium">{{ workspace()?.clientCode }} - {{ workspace()?.clientName }}</span>
-          </div>
-          <h1 class="text-3xl font-bold text-text-primary tracking-tight">Document Workspace</h1>
-          <p class="text-text-secondary mt-1">Manage files and documents for this client</p>
-        </div>
-        <div class="flex items-center gap-3">
-          <app-button variant="secondary" size="md" (clicked)="refresh()">
-            <ng-icon name="heroArrowPathSolid" class="mr-2" size="18"></ng-icon>
-            Refresh
-          </app-button>
-          <app-button variant="secondary" size="md" (clicked)="triggerFolderCreate()">
-            <ng-icon name="heroFolderPlusSolid" class="mr-2" size="18"></ng-icon>
-            New Folder
-          </app-button>
-          <app-button variant="primary" size="md" (clicked)="triggerUpload()">
-            <ng-icon name="heroArrowUpTraySolid" class="mr-2" size="18"></ng-icon>
-            Upload Files
-          </app-button>
-          <input
-            #fileInput
-            type="file"
-            multiple
-            class="hidden"
-            (change)="onFilesSelected($event)"
-          />
-        </div>
-      </header>
+    <div class="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <input
+        #fileInput
+        type="file"
+        multiple
+        class="hidden"
+        (change)="onFilesSelected($event)"
+      />
 
       <!-- Loading State -->
       @if (isLoading()) {
@@ -130,39 +104,47 @@ import { MatIconModule } from '@angular/material/icon';
           <app-loader size="lg" label="Loading workspace..."></app-loader>
         </div>
       } @else if (workspace()) {
-        <!-- Breadcrumb Navigation -->
-        <nav class="flex items-center gap-2 bg-gray-50 dark:bg-gray-800/50 rounded-xl px-4 py-3 border border-border-color">
+      <!-- Workspace Path Breadcrumbs -->
+      <section class="mb-6">
+        <nav class="flex items-center gap-1 py-1 text-sm">
           <button
-            class="flex items-center gap-1 text-sm font-medium text-text-secondary hover:text-primary-600 transition-colors"
+            class="flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-text-secondary hover:text-primary-600 transition-all duration-200 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800"
             (click)="navigateToRoot()"
           >
-            <ng-icon name="heroHomeSolid" size="16"></ng-icon>
-            <span>{{ workspace()?.clientCode }}</span>
+            <ng-icon name="heroHomeSolid" size="16" class="text-primary-500"></ng-icon>
+            <span class="tracking-tight uppercase text-[11px]">{{ workspace()?.clientCode }}</span>
           </button>
+          
           @for (crumb of breadcrumbs(); track crumb.id; let last = $last) {
-            <ng-icon name="heroChevronRightSolid" size="14" class="text-text-secondary/50"></ng-icon>
-            <button
-              [class]="last ? 'text-primary-600 font-semibold' : 'text-text-secondary hover:text-primary-600'"
-              class="text-sm transition-colors"
-              (click)="navigateToFolder(crumb.id)"
-            >
-              {{ crumb.name }}
-            </button>
+            <div class="flex items-center gap-1">
+              <ng-icon name="heroChevronRightSolid" size="12" class="text-text-secondary/30"></ng-icon>
+              <button
+                [class]="last ? 'border-primary-500 text-primary-600 font-bold' : 'border-transparent text-text-secondary hover:text-primary-600 hover:border-slate-200 dark:hover:border-slate-700 hover:bg-white dark:hover:bg-slate-800'"
+                class="px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 border"
+                (click)="!last && navigateToFolder(crumb.id)"
+              >
+                @if (last) {
+                  <div class="w-1.5 h-1.5 rounded-full bg-primary-500"></div>
+                }
+                {{ crumb.name }}
+              </button>
+            </div>
           }
         </nav>
+      </section>
 
-        <!-- Main Content Grid -->
-        <div class="grid grid-cols-12 gap-6">
+      <!-- Main Content Grid -->
+      <div class="flex-1 grid grid-cols-12 gap-6 items-stretch min-h-0">
           <!-- Folder Tree Sidebar -->
-          <aside class="col-span-12 lg:col-span-3">
-            <app-card [padding]="false" class="sticky top-24">
-              <div class="p-4 border-b border-border-color bg-gray-50/50">
+          <aside class="col-span-12 lg:col-span-3 flex flex-col min-h-0">
+            <app-card [padding]="false" [fullHeight]="true" class="flex-1 flex flex-col min-h-0">
+              <div class="shrink-0 p-4 border-b border-border-color bg-gray-50/50">
                 <h3 class="font-semibold text-text-primary flex items-center gap-2">
                   <ng-icon name="heroFolderSolid" size="18" class="text-primary-600"></ng-icon>
                   Folder Structure
                 </h3>
               </div>
-              <div class="p-2 max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div class="flex-1 p-2 overflow-y-auto custom-scrollbar">
                 @if (workspace()?.rootFolder) {
                   <ng-container *ngTemplateOutlet="folderTree; context: { folder: workspace()!.rootFolder, level: 0 }"></ng-container>
                 }
@@ -171,11 +153,17 @@ import { MatIconModule } from '@angular/material/icon';
           </aside>
 
           <!-- File Explorer Main Area -->
-          <main [class]="(viewState$ | async)?.showPreview || (viewState$ | async)?.showDetails ? 'col-span-12 lg:col-span-6' : 'col-span-12 lg:col-span-9'">
-            <app-card [padding]="false" class="h-full flex flex-col min-h-[600px]">
+          <main [class]="(viewState$ | async)?.showPreview || (viewState$ | async)?.showDetails ? 'col-span-12 lg:col-span-6' : 'col-span-12 lg:col-span-9'" class="flex flex-col min-h-0">
+            <app-card [padding]="false" [fullHeight]="true" class="flex-1 flex flex-col min-h-0">
               <!-- Toolbar Integration -->
               <div class="border-b border-border-color">
-                <app-file-view-toolbar></app-file-view-toolbar>
+                <app-file-view-toolbar 
+                  [canGoBack]="breadcrumbs().length > 0"
+                  (refreshClicked)="refresh()"
+                  (newFolderClicked)="triggerFolderCreate()"
+                  (uploadClicked)="triggerUpload()"
+                  (backClicked)="goBack()">
+                </app-file-view-toolbar>
               </div>
 
               <!-- Folder Header -->
@@ -224,7 +212,7 @@ import { MatIconModule } from '@angular/material/icon';
               }
 
               <!-- View Content Area -->
-              <div class="flex-1 overflow-auto bg-white/50 dark:bg-gray-800/50 min-h-[400px]" [ngSwitch]="(viewState$ | async)?.viewMode">
+              <div class="flex-1 overflow-auto bg-white/50 dark:bg-gray-800/50" [ngSwitch]="(viewState$ | async)?.viewMode">
                 @if (fileItems().length > 0) {
                   <!-- Grid Views (Extra Large, Large, Medium, Small) -->
                   <app-file-grid
@@ -740,6 +728,18 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
           this.toast.error('Failed to load folder', error.message);
         }
       });
+  }
+
+  goBack() {
+    const crumbs = this.breadcrumbs();
+    if (crumbs.length > 0) {
+      if (crumbs.length === 1) {
+        this.navigateToRoot();
+      } else {
+        const parentFolderId = crumbs[crumbs.length - 2].id;
+        this.navigateToFolder(parentFolderId);
+      }
+    }
   }
 
   triggerUpload() {

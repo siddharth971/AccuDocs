@@ -105,7 +105,7 @@ export class CardComponent {
       interactiveClasses.push('cursor-pointer active:scale-[0.995]');
     }
 
-    const heightClass = this.fullHeight() ? 'h-full' : '';
+    const heightClass = this.fullHeight() ? 'h-full flex flex-col' : '';
 
     return [
       baseClasses,
@@ -117,6 +117,8 @@ export class CardComponent {
 
   // Computed content classes
   contentClasses = computed(() => {
-    return this.padding() ? 'p-6' : '';
+    const base = this.padding() ? 'p-6' : '';
+    const height = this.fullHeight() ? 'flex-1 flex flex-col min-h-0' : '';
+    return `${base} ${height}`.trim();
   });
 }
