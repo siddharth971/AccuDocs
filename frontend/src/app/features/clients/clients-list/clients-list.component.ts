@@ -3,12 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ClientsFacade } from './clients-list.facade';
-import { ButtonComponent } from '@ui/atoms/button.component';
-import { CardComponent } from '@ui/molecules/card.component';
 import { ClientFormComponent } from '../client-form/client-form.component';
 
 import { DataTableComponent } from '../../../shared/data-table/data-table.component';
-import { LoaderComponent } from '@ui/atoms/loader.component';
 import { NgIconComponent, provideIcons } from '@ng-icons/core';
 import {
   heroPlusSolid,
@@ -27,10 +24,7 @@ import {
     CommonModule,
     RouterLink,
     FormsModule,
-    ButtonComponent,
-    CardComponent,
     DataTableComponent,
-    LoaderComponent,
     NgIconComponent
   ],
   providers: [

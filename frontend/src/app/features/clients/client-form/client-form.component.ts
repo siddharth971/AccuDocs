@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,7 +15,6 @@ import { NotificationService } from '@core/services/notification.service';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterLink,
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,

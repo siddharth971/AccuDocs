@@ -217,7 +217,7 @@ import {
                           <p class="font-medium text-text-primary truncate">{{ folder.name }}</p>
                           <p class="text-xs text-text-secondary">
                             {{ folder.fileCount }} files
-                            @if (folder.children?.length) {
+                            @if (folder.children.length) {
                               · {{ folder.children.length }} folders
                             }
                           </p>
