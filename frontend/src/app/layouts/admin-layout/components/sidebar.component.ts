@@ -8,6 +8,7 @@ import {
   heroFolderSolid,
   heroClockSolid,
   heroHomeSolid,
+  heroChatBubbleLeftRightSolid,
   heroCog6ToothSolid
 } from '@ng-icons/heroicons/solid';
 import { AuthService } from '@core/services/auth.service';
@@ -75,7 +76,9 @@ import { AuthService } from '@core/services/auth.service';
       heroUsersSolid,
       heroFolderSolid,
       heroClockSolid,
+
       heroHomeSolid,
+      heroChatBubbleLeftRightSolid,
       heroCog6ToothSolid
     })
   ]
@@ -90,5 +93,6 @@ export class SidebarComponent {
     { label: 'Documents', path: '/documents', icon: 'heroFolderSolid', exact: false, adminOnly: false },
     { label: 'Clients', path: '/clients', icon: 'heroUsersSolid', exact: false, adminOnly: true },
     { label: 'Activity Logs', path: '/logs', icon: 'heroClockSolid', exact: false, adminOnly: true },
+    { label: 'WhatsApp', path: '/whatsapp', icon: 'heroChatBubbleLeftRightSolid', exact: false, adminOnly: true },
   ];
 }

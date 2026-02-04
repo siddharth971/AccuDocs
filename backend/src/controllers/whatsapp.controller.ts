@@ -1,3 +1,4 @@
+
 import { Request, Response } from 'express';
 import { whatsappService } from '../services';
 import { authService } from '../services';
@@ -15,7 +16,7 @@ export const verifyWebhook = asyncHandler(async (req: Request, res: Response) =>
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  if (mode === 'subscribe' && token === config.twilio.webhookVerifyToken) {
+  if (mode === 'subscribe' && token === config.meta.webhookVerifyToken) {
     res.status(200).send(challenge);
   } else {
     res.status(403).send('Forbidden');
@@ -27,51 +28,80 @@ export const verifyWebhook = asyncHandler(async (req: Request, res: Response) =>
  * POST /whatsapp/webhook
  */
 export const handleWebhook = asyncHandler(async (req: Request, res: Response) => {
-  const { From, Body, MessageSid } = req.body;
+  const { body } = req;
 
-  if (!From || !Body) {
-    sendSuccess(res, null, 'OK');
-    return;
-  }
+  // Check if this is a WhatsApp status update (entry[0].changes[0].value.statuses)
+  // We strictly look for "messages"
+  if (body.object === 'whatsapp_business_account') {
+    if (
+      body.entry &&
+      body.entry[0].changes &&
+      body.entry[0].changes[0] &&
+      body.entry[0].changes[0].value.messages &&
+      body.entry[0].changes[0].value.messages[0]
+    ) {
+      const messageObject = body.entry[0].changes[0].value.messages[0];
+      const from = messageObject.from; // Mobile number
+      const messageId = messageObject.id;
+      const type = messageObject.type;
 
-  const mobile = From.replace('whatsapp:', '');
-  const ip = req.ip || req.socket.remoteAddress;
+      let messageBody = '';
 
-  // Log the incoming message
-  await logService.createLog('WHATSAPP_MESSAGE', `Received message from ${mobile}: ${Body.substring(0, 50)}...`, {
-    ip,
-    metadata: { from: From, messageSid: MessageSid },
-  });
+      if (type === 'text') {
+        messageBody = messageObject.text.body;
+      } else if (type === 'button') {
+        messageBody = messageObject.button.text; // Payload or text
+      } else if (type === 'interactive') {
+        if (messageObject.interactive.type === 'button_reply') {
+          messageBody = messageObject.interactive.button_reply.id; // or title
+        } else if (messageObject.interactive.type === 'list_reply') {
+          messageBody = messageObject.interactive.list_reply.id;
+        }
+      } else {
+        // Handle other types as empty or specific text
+        messageBody = `[${type}]`;
+      }
 
-  try {
-    // Check if this is an OTP verification
-    const session = await whatsappService.getSession(mobile);
-    const message = Body.trim();
+      const ip = req.ip || req.socket.remoteAddress;
 
-    if (session?.state === 'AWAITING_OTP' && /^\d{6}$/.test(message)) {
-      // This is an OTP verification attempt
+      // Log the incoming message
+      await logService.createLog('WHATSAPP_MESSAGE', `Received message from ${from}: ${messageBody.substring(0, 50)}...`, {
+        ip,
+        metadata: { from, messageId, raw: JSON.stringify(messageObject) },
+      });
+
       try {
-        await authService.verifyOTP(mobile, message, ip);
-        await whatsappService.updateSession(mobile, { state: 'AUTHENTICATED' });
+        // Check if this is an OTP verification
+        const session = await whatsappService.getSession(from);
+        const trimmedMessage = messageBody.trim();
+
+        if (session?.state === 'AWAITING_OTP' && /^\d{6}$/.test(trimmedMessage)) {
+          // This is an OTP verification attempt
+          try {
+            await authService.verifyOTP(from, trimmedMessage, ip);
+            await whatsappService.updateSession(from, { state: 'AUTHENTICATED' });
+          } catch (error) {
+            // OTP verification failed, let the regular message handler deal with it
+            // or we can consume it here
+            await whatsappService.sendMessage(from, '❌ Invalid or expired OTP. Please try again.');
+            sendSuccess(res, null, 'OK'); // Ack to Meta
+            return;
+          }
+        }
+
+        // Process the message through WhatsApp service
+        const response = await whatsappService.processMessage(from, messageBody);
+
+        // Send response via WhatsApp
+        await whatsappService.sendMessage(from, response);
       } catch (error) {
-        // OTP verification failed, let the regular message handler deal with it
+        console.error('WhatsApp webhook error:', error);
+        // Don't loop errors back to user ideally
       }
     }
-
-    // Process the message through WhatsApp service
-    const response = await whatsappService.processMessage(From, Body);
-
-    // Send response via WhatsApp
-    await whatsappService.sendMessage(From, response);
-  } catch (error) {
-    console.error('WhatsApp webhook error:', error);
-    await whatsappService.sendMessage(
-      From,
-      '❌ Sorry, something went wrong. Please try again later.'
-    );
   }
 
-  // Always respond with 200 to acknowledge the webhook
+  // Always respond with 200 to acknowledge the webhook to Meta
   sendSuccess(res, null, 'OK');
 });
 

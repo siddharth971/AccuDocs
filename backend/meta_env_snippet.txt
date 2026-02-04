@@ -1,0 +1,21 @@
+# ===========================================
+# META (WHATSAPP) CONFIGURATION
+# Copy this block into your d:\AccuDocs\backend\.env file
+# Replace the old TWILIO section if it exists
+# ===========================================
+
+# 1. Phone Number ID (From Meta -> WhatsApp -> API Setup)
+META_PHONE_NUMBER_ID=945658771972023
+
+# 2. Temporary/System Access Token
+META_ACCESS_TOKEN=EAARTGC3cbG0BQoZAQmZAK9S1UJZCiZBWgdZBHKnlZAQlZAKR0yeykuR8ArmwWKZCFDl147ZB74Hnls3I97hMpcvnRKPuSjCLVko6IOXqbyFxHuywk9AdRQ4zHjMhyMfToG1CytA4ZCk9ZB0JLSynpS2DjWkFN2NZB7cRFROgzPzKhl0cy4cZCzB2XBFik9rf1HfdOqZCeyvih3jJzZBZBhgvsKgVe4d1f1XDhLJ8pJt0Jd3mdJYPvzbxgm24KRZAWi2Q9mWZBgcdOBu3JQxPDVAE7IgZB3zWgk7BzuZA
+
+# 3. WhatsApp Business Account ID (From Meta -> WhatsApp -> API Setup)
+META_BUSINESS_ACCOUNT_ID=896967476531432
+
+# 4. Webhook Verify Token
+# I've set a default one for you. Use this exact string when setting up webhook on Meta website.
+META_WEBHOOK_VERIFY_TOKEN=accudocs_secret_token_123
+
+# API Version
+META_API_VERSION=v19.0

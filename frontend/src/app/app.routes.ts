@@ -38,6 +38,12 @@ export const routes: Routes = [
         data: { roles: ['admin'] },
       },
       {
+        path: 'whatsapp',
+        loadComponent: () => import('./features/admin/whatsapp-console/whatsapp-console.component').then(m => m.WhatsAppConsoleComponent),
+        canActivate: [roleGuard],
+        data: { roles: ['admin'] },
+      },
+      {
         path: 'workspace',
         loadChildren: () => import('./features/workspace/workspace.routes').then((m) => m.WORKSPACE_ROUTES),
       },
