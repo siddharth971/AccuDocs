@@ -3,11 +3,11 @@
   *ngIf="viewState$ | async as state">
 
   <div class="flex items-center gap-1">
-    <!-- Back Button -->
-    <app-button variant="ghost" size="sm" [disabled]="!canGoBack()" (clicked)="onBack()" matTooltip="Go back"
-      class="!px-2">
-      <ng-icon name="heroArrowLeftSolid" size="18" icon-left></ng-icon>
-    </app-button>
+    <!-- Back Button with hover-expand text -->
+    <button class="go-back-btn" [disabled]="!canGoBack()" (click)="onBack()" matTooltip="Go back to previous folder">
+      <ng-icon name="heroArrowLeftSolid" size="18"></ng-icon>
+      <span class="go-back-text">Go back</span>
+    </button>
 
     <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
 

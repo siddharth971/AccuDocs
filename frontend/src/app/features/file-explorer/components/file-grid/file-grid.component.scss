@@ -3,11 +3,63 @@
   padding: 16px;
   height: 100%;
   overflow-y: auto;
+  position: relative;
+}
+
+/* Multi-select Header Bar */
+.multi-select-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin: -16px -16px 16px -16px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.08));
+  border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+  backdrop-filter: blur(8px);
+
+  .select-all-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .select-info {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #3b82f6;
+    }
+  }
+
+  .clear-selection-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 6px;
+    color: #64748b;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: #3b82f6;
+      color: #3b82f6;
+    }
+  }
 }
 
 .grid-container {
   display: grid;
   gap: 16px;
+  padding-bottom: 80px; // Space for floating action bar
 
   &.extra-large {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -60,9 +112,45 @@
   position: relative;
   background: white;
 
+  /* Selection Checkbox */
+  .selection-checkbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.2s ease;
+    z-index: 10;
+
+    &.visible {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    ::ng-deep .mat-mdc-checkbox {
+      .mdc-checkbox {
+        padding: 0;
+        width: 20px;
+        height: 20px;
+
+        .mdc-checkbox__background {
+          width: 18px;
+          height: 18px;
+          border-radius: 4px;
+          border-width: 2px;
+        }
+      }
+    }
+  }
+
   &:hover {
     background-color: rgba(59, 130, 246, 0.05);
     border-color: rgba(59, 130, 246, 0.2);
+
+    .selection-checkbox {
+      opacity: 1;
+      transform: scale(1);
+    }
 
     .icon-wrapper {
       mat-icon {
@@ -82,6 +170,26 @@
 
     .icon-wrapper mat-icon {
       color: #3b82f6;
+    }
+  }
+
+  &.selected {
+    background-color: rgba(59, 130, 246, 0.12);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+
+    .icon-wrapper mat-icon {
+      color: #3b82f6;
+    }
+
+    .selection-checkbox {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    &:hover {
+      background-color: rgba(59, 130, 246, 0.18);
+      border-color: rgba(59, 130, 246, 0.6);
     }
   }
 
@@ -148,6 +256,168 @@
   }
 }
 
+/* Floating Action Bar */
+.floating-action-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  .action-bar-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    border-radius: 16px;
+    box-shadow:
+      0 20px 25px -5px rgba(0, 0, 0, 0.2),
+      0 8px 10px -6px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    backdrop-filter: blur(16px);
+  }
+
+  .selection-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 16px;
+    border-right: 1px solid rgba(255, 255, 255, 0.15);
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: #22c55e;
+    }
+
+    span {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: white;
+      white-space: nowrap;
+    }
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    mat-icon {
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      color: rgba(255, 255, 255, 0.8);
+      transition: all 0.2s ease;
+    }
+
+    .action-label {
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+
+      mat-icon {
+        color: white;
+        transform: scale(1.1);
+      }
+
+      .action-label {
+        color: white;
+      }
+    }
+
+    &:active {
+      transform: scale(0.95);
+    }
+
+    &.danger {
+      &:hover {
+        background: rgba(239, 68, 68, 0.2);
+
+        mat-icon {
+          color: #ef4444;
+        }
+
+        .action-label {
+          color: #ef4444;
+        }
+      }
+    }
+  }
+
+  .action-divider {
+    width: 1px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.15);
+    margin: 0 8px;
+  }
+
+  .close-bar-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    margin-left: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.2);
+
+      mat-icon {
+        color: white;
+      }
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* Context Menu Styling to match app theme */
 :host ::ng-deep .mat-mdc-menu-panel {
   min-width: 160px !important;
@@ -186,5 +456,26 @@
     mat-icon {
       color: #ef4444 !important;
     }
+  }
+}
+
+/* Mat Checkbox Styling */
+:host ::ng-deep .mat-mdc-checkbox {
+  .mdc-checkbox__checkmark {
+    color: white !important;
+  }
+
+  .mdc-checkbox__background {
+    border-color: #94a3b8 !important;
+  }
+
+  &.mat-mdc-checkbox-checked .mdc-checkbox__background {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+  }
+
+  &.mat-mdc-checkbox-indeterminate .mdc-checkbox__background {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
   }
 }

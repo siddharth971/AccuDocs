@@ -1,7 +1,30 @@
+<!-- Multi-select Header Bar -->
+<div class="multi-select-header" *ngIf="isMultiSelectMode">
+  <div class="select-all-wrapper">
+    <mat-checkbox [checked]="isAllSelected" [indeterminate]="isSomeSelected" (change)="toggleSelectAll()"
+      color="primary">
+    </mat-checkbox>
+    <span class="select-info">{{ selectedCount }} item{{ selectedCount !== 1 ? 's' : '' }} selected</span>
+  </div>
+  <button class="clear-selection-btn" (click)="clearSelection()">
+    <mat-icon>close</mat-icon>
+    <span>Clear Selection</span>
+  </button>
+</div>
+
 <div class="grid-container" [ngClass]="viewMode">
-  <div class="file-card" *ngFor="let file of files; trackBy: trackById" (click)="onFileClick(file)"
-    (dblclick)="onFileDoubleClick(file)" [class.active]="file === activeFile"
+  <div class="file-card" *ngFor="let file of files; trackBy: trackById" (click)="handleFileClick(file, $event)"
+    (dblclick)="onFileDoubleClick(file)" [class.active]="file === activeFile" [class.selected]="isSelected(file)"
     [class.editing]="editingFileId === file.id" (contextmenu)="onContextMenu($event, file)">
+
+    <!-- Selection Checkbox (visible in multi-select mode or on hover) -->
+    <div class="selection-checkbox" [class.visible]="isMultiSelectMode || isSelected(file)"
+      (click)="toggleFileSelection(file, $event)">
+      <mat-checkbox [checked]="isSelected(file)" (click)="$event.stopPropagation()" (change)="toggleFileSelection(file)"
+        color="primary">
+      </mat-checkbox>
+    </div>
+
     <div class="icon-wrapper">
       <mat-icon [style.font-size.px]="getIconSize()">{{ getFileIcon(file.type) }}</mat-icon>
       <div class="folder-badge" *ngIf="file.type === 'folder'"></div>
@@ -15,6 +38,44 @@
     <!-- Inline rename input -->
     <input *ngIf="editingFileId === file.id" type="text" class="inline-rename-input" [(ngModel)]="editingFileName"
       (blur)="confirmRename(file)" (keydown)="onRenameKeydown($event, file)" (click)="$event.stopPropagation()" />
+  </div>
+</div>
+
+<!-- Floating Action Bar (shown when items are selected) -->
+<div class="floating-action-bar" *ngIf="selectedCount > 0" [@slideUp]>
+  <div class="action-bar-content">
+    <div class="selection-info">
+      <mat-icon>check_circle</mat-icon>
+      <span>{{ selectedCount }} item{{ selectedCount !== 1 ? 's' : '' }} selected</span>
+    </div>
+
+    <div class="action-buttons">
+      <button class="action-btn" matTooltip="Copy" (click)="onBulkCopy()">
+        <mat-icon>content_copy</mat-icon>
+        <span class="action-label">Copy</span>
+      </button>
+
+      <button class="action-btn" matTooltip="Download" (click)="onBulkDownload()">
+        <mat-icon>download</mat-icon>
+        <span class="action-label">Download</span>
+      </button>
+
+      <button class="action-btn" matTooltip="Move" (click)="onBulkMove()">
+        <mat-icon>drive_file_move</mat-icon>
+        <span class="action-label">Move</span>
+      </button>
+
+      <div class="action-divider"></div>
+
+      <button class="action-btn danger" matTooltip="Delete" (click)="onBulkDelete()">
+        <mat-icon>delete</mat-icon>
+        <span class="action-label">Delete</span>
+      </button>
+    </div>
+
+    <button class="close-bar-btn" matTooltip="Cancel selection" (click)="clearSelection()">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 </div>
 

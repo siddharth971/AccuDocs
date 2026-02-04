@@ -103,6 +103,54 @@ export class FileExplorerComponent implements OnInit {
     });
   }
 
+  // Bulk action handlers
+  onBulkCopy(files: FileItem[]) {
+    console.log('Bulk copy:', files.map(f => f.name));
+    // TODO: Implement actual copy functionality
+    // For now, show a success message
+    alert(`${files.length} item(s) copied to clipboard`);
+  }
+
+  onBulkDownload(files: FileItem[]) {
+    console.log('Bulk download:', files.map(f => f.name));
+    // TODO: Implement actual download functionality
+    files.forEach(file => {
+      const link = document.createElement('a');
+      link.href = '#'; // Mock URL - replace with actual file URL
+      link.download = file.name;
+      link.click();
+    });
+  }
+
+  onBulkMove(files: FileItem[]) {
+    console.log('Bulk move:', files.map(f => f.name));
+    // TODO: Implement folder selection dialog for moving files
+    alert(`Move ${files.length} item(s) - Feature coming soon`);
+  }
+
+  onBulkDelete(files: FileItem[]) {
+    const fileNames = files.map(f => f.name).join(', ');
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete Multiple Items',
+        message: `Are you sure you want to delete ${files.length} item(s)?\n\n${files.length <= 5 ? fileNames : files.slice(0, 5).map(f => f.name).join(', ') + ` and ${files.length - 5} more...`}`,
+        confirmText: 'Delete All',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        console.log('Bulk deleting files:', files.map(f => f.name));
+        const idsToDelete = new Set(files.map(f => f.id));
+        this.files = this.files.filter(f => !idsToDelete.has(f.id));
+        if (this.selectedFile && idsToDelete.has(this.selectedFile.id)) {
+          this.selectedFile = null;
+        }
+      }
+    });
+  }
+
   private loadMockFiles() {
     this.files = [
       { id: '1', name: 'Annual Report 2024.pdf', type: 'pdf', size: 2500000, modifiedDate: new Date(), createdDate: new Date(), owner: 'John Doe', path: '/Documents/Annual Report 2024.pdf' },

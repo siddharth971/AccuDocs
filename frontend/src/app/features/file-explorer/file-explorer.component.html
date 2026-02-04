@@ -12,25 +12,33 @@
         <app-file-grid *ngSwitchCase="'extra-large'" [files]="files" [viewMode]="'extra-large'"
           [activeFile]="selectedFile" (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
           (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
-          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)"
+          (bulkCopy)="onBulkCopy($event)" (bulkDownload)="onBulkDownload($event)" (bulkDelete)="onBulkDelete($event)"
+          (bulkMove)="onBulkMove($event)">
         </app-file-grid>
 
         <app-file-grid *ngSwitchCase="'large'" [files]="files" [viewMode]="'large'" [activeFile]="selectedFile"
           (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
           (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
-          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)"
+          (bulkCopy)="onBulkCopy($event)" (bulkDownload)="onBulkDownload($event)" (bulkDelete)="onBulkDelete($event)"
+          (bulkMove)="onBulkMove($event)">
         </app-file-grid>
 
         <app-file-grid *ngSwitchCase="'medium'" [files]="files" [viewMode]="'medium'" [activeFile]="selectedFile"
           (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
           (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
-          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)"
+          (bulkCopy)="onBulkCopy($event)" (bulkDownload)="onBulkDownload($event)" (bulkDelete)="onBulkDelete($event)"
+          (bulkMove)="onBulkMove($event)">
         </app-file-grid>
 
         <app-file-grid *ngSwitchCase="'small'" [files]="files" [viewMode]="'small'" [activeFile]="selectedFile"
           (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
           (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
-          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)"
+          (bulkCopy)="onBulkCopy($event)" (bulkDownload)="onBulkDownload($event)" (bulkDelete)="onBulkDelete($event)"
+          (bulkMove)="onBulkMove($event)">
         </app-file-grid>
 
         <!-- List View -->
@@ -47,14 +55,18 @@
         <app-file-grid *ngSwitchCase="'tiles'" [files]="files" [viewMode]="'medium'" [activeFile]="selectedFile"
           (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
           (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
-          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)"
+          (bulkCopy)="onBulkCopy($event)" (bulkDownload)="onBulkDownload($event)" (bulkDelete)="onBulkDelete($event)"
+          (bulkMove)="onBulkMove($event)">
         </app-file-grid>
 
         <!-- Content View (Using grid with large icons) -->
         <app-file-grid *ngSwitchCase="'content'" [files]="files" [viewMode]="'large'" [activeFile]="selectedFile"
           (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
           (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
-          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)"
+          (bulkCopy)="onBulkCopy($event)" (bulkDownload)="onBulkDownload($event)" (bulkDelete)="onBulkDelete($event)"
+          (bulkMove)="onBulkMove($event)">
         </app-file-grid>
 
         <div *ngSwitchDefault class="p-8 text-center text-slate-400">
