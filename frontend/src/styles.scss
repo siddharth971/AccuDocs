@@ -465,7 +465,7 @@ button {
 }
 
 // ==========================================
-// MATERIAL OVERRIDES (Minimal)
+// MATERIAL OVERRIDES (Comprehensive)
 // ==========================================
 .mat-mdc-form-field {
   width: 100%;
@@ -477,6 +477,58 @@ button {
 
 .mat-mdc-snack-bar-container {
   --mdc-snackbar-container-shape: var(--radius-md);
+}
+
+// Global Menu Styles
+.mat-mdc-menu-panel {
+  --mdc-menu-container-shape: var(--radius-md);
+  --mdc-menu-container-color: var(--surface-color);
+  background-color: var(--surface-color) !important;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-dropdown) !important;
+  min-width: 180px !important;
+  max-width: 320px !important;
+  overflow: hidden !important;
+
+  .dark & {
+    --mdc-menu-container-color: var(--surface-elevated);
+    background-color: var(--surface-elevated) !important;
+  }
+}
+
+.mat-mdc-menu-item {
+  --mdc-menu-item-label-text-color: var(--text-primary);
+  --mdc-menu-item-label-text-size: var(--text-sm);
+  min-height: 44px !important;
+
+  &:hover:not([disabled]) {
+    background-color: var(--background-color) !important;
+  }
+
+  .mat-icon {
+    color: var(--text-secondary);
+    margin-right: var(--space-3) !important;
+    font-size: 20px;
+    height: 20px;
+    width: 20px;
+  }
+
+  &.bg-gray-100 {
+    background-color: var(--primary-50) !important;
+    color: var(--primary-600) !important;
+    font-weight: 500;
+
+    .mat-icon {
+      color: var(--primary-600) !important;
+    }
+  }
+}
+
+// Specifically for File Explorer Menu
+.file-explorer-menu {
+  .mat-mdc-menu-content {
+    padding: var(--space-1) 0 !important;
+  }
 }
 
 // ==========================================

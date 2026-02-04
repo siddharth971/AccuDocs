@@ -1,0 +1,37 @@
+<div class="h-full w-full">
+  <ngx-datatable class="material cursor-pointer" [rows]="files" [columnMode]="ColumnMode.force" [headerHeight]="40"
+    [footerHeight]="0" [rowHeight]="40" [scrollbarV]="true" [scrollbarH]="false" (activate)="onActivate($event)">
+    <ngx-datatable-column name="Name" prop="name">
+      <ng-template let-row="row" ngx-datatable-cell-template>
+        <div class="flex items-center gap-2">
+          <mat-icon class="text-slate-500 scale-75">{{ getFileIcon(row.type) }}</mat-icon>
+          <span class="text-sm">{{ row.name }}</span>
+        </div>
+      </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Type" prop="type" [width]="100">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+        <span class="text-sm text-slate-500 capitalize">{{ value }}</span>
+      </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Size" prop="size" [width]="100">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+        <span class="text-sm text-slate-500">{{ formatSize(value) }}</span>
+      </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Modified" prop="modifiedDate" [width]="150">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+        <span class="text-sm text-slate-500">{{ value | date:'short' }}</span>
+      </ng-template>
+    </ngx-datatable-column>
+
+    <ngx-datatable-column name="Owner" prop="owner" [width]="120">
+      <ng-template let-value="value" ngx-datatable-cell-template>
+        <span class="text-sm text-slate-500">{{ value }}</span>
+      </ng-template>
+    </ngx-datatable-column>
+  </ngx-datatable>
+</div>

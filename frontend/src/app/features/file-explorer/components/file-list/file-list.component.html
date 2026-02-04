@@ -1,0 +1,12 @@
+<div class="list-container">
+  <div class="list-item" *ngFor="let file of files" (click)="onFileClick(file)" (dblclick)="onFileDoubleClick(file)">
+    <div class="item-info">
+      <mat-icon>{{ getFileIcon(file.type) }}</mat-icon>
+      <span class="file-name">{{ file.name }}</span>
+    </div>
+    <div class="item-meta">
+      <span class="file-size">{{ formatSize(file.size) }}</span>
+      <span class="file-date">{{ file.modifiedDate | date:'mediumDate' }}</span>
+    </div>
+  </div>
+</div>

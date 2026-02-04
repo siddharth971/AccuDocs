@@ -31,7 +31,12 @@
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": ["src/favicon.ico", "src/assets"],
-            "styles": ["src/styles.scss"],
+            "styles": [
+              "src/styles.scss",
+              "node_modules/@swimlane/ngx-datatable/index.css",
+              "node_modules/@swimlane/ngx-datatable/themes/material.css",
+              "node_modules/@swimlane/ngx-datatable/assets/icons.css"
+            ],
             "scripts": []
           },
           "configurations": {

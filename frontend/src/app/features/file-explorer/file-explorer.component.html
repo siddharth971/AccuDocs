@@ -1,0 +1,78 @@
+<div
+  class="flex flex-col h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden shadow-sm"
+  *ngIf="viewState$ | async as state">
+  <!-- Toolbar Section -->
+  <app-file-view-toolbar></app-file-view-toolbar>
+
+  <div class="flex flex-1 overflow-hidden">
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-auto relative">
+      <ng-container [ngSwitch]="state.viewMode">
+        <!-- Icon Views (Extra Large, Large, Medium, Small) -->
+        <app-file-grid *ngSwitchCase="'extra-large'" [files]="files" [viewMode]="'extra-large'"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        </app-file-grid>
+
+        <app-file-grid *ngSwitchCase="'large'" [files]="files" [viewMode]="'large'"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        </app-file-grid>
+
+        <app-file-grid *ngSwitchCase="'medium'" [files]="files" [viewMode]="'medium'"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        </app-file-grid>
+
+        <app-file-grid *ngSwitchCase="'small'" [files]="files" [viewMode]="'small'"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        </app-file-grid>
+
+        <!-- List View -->
+        <app-file-list *ngSwitchCase="'list'" [files]="files" (fileSelected)="onFileSelected($event)"
+          (fileOpened)="onFileOpened($event)">
+        </app-file-list>
+
+        <!-- Details View -->
+        <app-file-details *ngSwitchCase="'details'" [files]="files" (fileSelected)="onFileSelected($event)"
+          (fileOpened)="onFileOpened($event)">
+        </app-file-details>
+
+        <!-- Tiles View (Using grid with medium icons and more info) -->
+        <app-file-grid *ngSwitchCase="'tiles'" [files]="files" [viewMode]="'medium'"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        </app-file-grid>
+
+        <!-- Content View (Using grid with large icons) -->
+        <app-file-grid *ngSwitchCase="'content'" [files]="files" [viewMode]="'large'"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        </app-file-grid>
+
+        <div *ngSwitchDefault class="p-8 text-center text-slate-400">
+          Selected view is coming soon...
+        </div>
+      </ng-container>
+    </main>
+
+    <!-- Side Panes -->
+    <aside *ngIf="state.showDetails" class="animate-in slide-in-from-right duration-300">
+      <app-details-pane [selectedFile]="selectedFile"></app-details-pane>
+    </aside>
+
+    <aside *ngIf="state.showPreview" class="animate-in slide-in-from-right duration-300">
+      <app-preview-pane [selectedFile]="selectedFile"></app-preview-pane>
+    </aside>
+  </div>
+
+  <!-- Status Bar (Optional, mimic Windows) -->
+  <footer
+    class="h-8 bg-slate-50 border-t border-slate-200 px-4 flex items-center justify-between text-[11px] text-slate-500 font-medium dark:bg-slate-900 dark:border-slate-800">
+    <div class="flex items-center gap-4">
+      <span>{{ files.length }} items</span>
+      <span *ngIf="selectedFile">1 item selected ({{ selectedFile.name }})</span>
+    </div>
+    <div class="flex items-center gap-3">
+      <mat-icon style="font-size: 14px; width: 14px; height: 14px; cursor: pointer;"
+        (click)="viewService.updateViewMode('details')">view_headline</mat-icon>
+      <mat-icon style="font-size: 14px; width: 14px; height: 14px; cursor: pointer;"
+        (click)="viewService.updateViewMode('large')">grid_view</mat-icon>
+    </div>
+  </footer>
+</div>

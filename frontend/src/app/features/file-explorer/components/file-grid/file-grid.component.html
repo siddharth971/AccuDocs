@@ -1,0 +1,12 @@
+<div class="grid-container" [ngClass]="viewMode">
+  <div class="file-card" *ngFor="let file of files; trackBy: trackById" (click)="onFileClick(file)"
+    (dblclick)="onFileDoubleClick(file)" [matTooltip]="file.name">
+    <div class="icon-wrapper">
+      <mat-icon [style.font-size.px]="getIconSize()">{{ getFileIcon(file.type) }}</mat-icon>
+      <div class="folder-badge" *ngIf="file.type === 'folder'"></div>
+    </div>
+    <div class="file-name text-truncate">
+      {{ file.name }}
+    </div>
+  </div>
+</div>

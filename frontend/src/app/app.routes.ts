@@ -39,7 +39,6 @@ export const routes: Routes = [
       },
       {
         path: 'workspace',
-
         loadChildren: () => import('./features/workspace/workspace.routes').then((m) => m.WORKSPACE_ROUTES),
       },
       {

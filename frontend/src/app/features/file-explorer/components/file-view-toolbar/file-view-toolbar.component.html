@@ -1,0 +1,53 @@
+<div
+  class="flex items-center justify-between px-4 py-1.5 bg-white dark:bg-slate-900 transition-colors duration-200 flex-wrap gap-2"
+  *ngIf="viewState$ | async as state">
+  <div class="flex items-center gap-2">
+    <!-- View Options Dropdown -->
+    <button mat-button [matMenuTriggerFor]="viewMenu" class="!flex !items-center !gap-1">
+      <mat-icon>{{ getCurrentIcon(state.viewMode) }}</mat-icon>
+      <span>View</span>
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #viewMenu="matMenu" class="file-explorer-menu">
+      <div class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase">Layout</div>
+      <button mat-menu-item *ngFor="let mode of viewModes" (click)="setView(mode.value)"
+        [class.bg-gray-100]="state.viewMode === mode.value">
+        <mat-icon>{{ mode.icon }}</mat-icon>
+        <span>{{ mode.label }}</span>
+      </button>
+
+      <div class="px-4 py-2 mt-2 text-xs font-semibold text-gray-500 uppercase border-t border-gray-100">Panes</div>
+      <button mat-menu-item (click)="toggleDetails(state.showDetails)">
+        <mat-icon>{{ state.showDetails ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+        <span>Details Pane</span>
+      </button>
+      <button mat-menu-item (click)="togglePreview(state.showPreview)">
+        <mat-icon>{{ state.showPreview ? 'check_box' : 'check_box_outline_blank' }}</mat-icon>
+        <span>Preview Pane</span>
+      </button>
+    </mat-menu>
+
+    <!-- Sort Dropdown -->
+    <button mat-button [matMenuTriggerFor]="sortMenu" class="!flex !items-center !gap-1">
+      <mat-icon>sort</mat-icon>
+      <span>Sort</span>
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+    <mat-menu #sortMenu="matMenu" class="file-explorer-menu">
+      <button mat-menu-item (click)="sort('name')">Name</button>
+      <button mat-menu-item (click)="sort('date')">Date Modified</button>
+      <button mat-menu-item (click)="sort('type')">Type</button>
+      <button mat-menu-item (click)="sort('size')">Size</button>
+    </mat-menu>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <button mat-icon-button (click)="refresh()" matTooltip="Refresh">
+      <mat-icon>refresh</mat-icon>
+    </button>
+    <button class="btn-primary !py-1.5 !px-3 shadow-md hover:shadow-lg transition-all">
+      <mat-icon class="!mr-1 !h-5 !w-5 !text-lg">upload</mat-icon>
+      Upload
+    </button>
+  </div>
+</div>

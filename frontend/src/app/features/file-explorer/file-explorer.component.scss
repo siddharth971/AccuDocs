@@ -1,0 +1,63 @@
+:host {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+aside {
+  z-index: 10;
+  display: flex;
+}
+
+/* Animations for side panes */
+.animate-in {
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
+}
+
+.slide-in-from-right {
+  animation-name: slideInRight;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+main {
+
+  /* Scrollbar styling for a premium feel */
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+
+    &:hover {
+      background: #cbd5e1;
+      background-clip: content-box;
+    }
+  }
+}
+
+.dark main::-webkit-scrollbar-thumb {
+  background: #334155;
+
+  &:hover {
+    background: #475569;
+  }
+}

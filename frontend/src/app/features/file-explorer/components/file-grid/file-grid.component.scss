@@ -1,0 +1,101 @@
+:host {
+  display: block;
+  padding: 16px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.grid-container {
+  display: grid;
+  gap: 16px;
+
+  &.extra-large {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+
+    .icon-wrapper mat-icon {
+      width: 96px;
+      height: 96px;
+    }
+  }
+
+  &.large {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+
+    .icon-wrapper mat-icon {
+      width: 72px;
+      height: 72px;
+    }
+  }
+
+  &.medium {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+
+    .icon-wrapper mat-icon {
+      width: 48px;
+      height: 48px;
+    }
+  }
+
+  &.small {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+
+    .icon-wrapper mat-icon {
+      width: 32px;
+      height: 32px;
+    }
+  }
+}
+
+.file-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  text-align: center;
+
+  &:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+    /* blue-50/5/10 */
+    border-color: rgba(59, 130, 246, 0.2);
+  }
+
+  &.active {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.4);
+  }
+
+  .icon-wrapper {
+    position: relative;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    mat-icon {
+      color: #64748b;
+      /* slate-500 */
+      transition: transform 0.2s ease;
+    }
+  }
+
+  .file-name {
+    font-size: 0.875rem;
+    color: #1e293b;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Add colors based on file type if possible or just general soft colors */
+.file-card:hover .icon-wrapper mat-icon {
+  transform: scale(1.05);
+  color: #3b82f6;
+  /* blue-500 */
+}

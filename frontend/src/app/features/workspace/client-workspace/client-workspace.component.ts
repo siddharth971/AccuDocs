@@ -34,6 +34,17 @@ import {
   heroEllipsisVerticalSolid
 } from '@ng-icons/heroicons/solid';
 
+// File Explorer specific imports
+import { FileViewToolbarComponent } from '../../file-explorer/components/file-view-toolbar/file-view-toolbar.component';
+import { FileGridComponent } from '../../file-explorer/components/file-grid/file-grid.component';
+import { FileListComponent } from '../../file-explorer/components/file-list/file-list.component';
+import { FileDetailsComponent } from '../../file-explorer/components/file-details/file-details.component';
+import { DetailsPaneComponent } from '../../file-explorer/components/details-pane/details-pane.component';
+import { PreviewPaneComponent } from '../../file-explorer/components/preview-pane/preview-pane.component';
+import { ViewPreferenceService } from '../../file-explorer/services/view-preference.service';
+import { FileItem } from '../../file-explorer/models/file-explorer.models';
+import { MatIconModule } from '@angular/material/icon';
+
 @Component({
   selector: 'app-client-workspace',
   standalone: true,
@@ -44,7 +55,14 @@ import {
     ButtonComponent,
     CardComponent,
     LoaderComponent,
-    NgIconComponent
+    NgIconComponent,
+    FileViewToolbarComponent,
+    FileGridComponent,
+    FileListComponent,
+    FileDetailsComponent,
+    DetailsPaneComponent,
+    PreviewPaneComponent,
+    MatIconModule
   ],
   providers: [
     provideIcons({
@@ -153,8 +171,13 @@ import {
           </aside>
 
           <!-- File Explorer Main Area -->
-          <main class="col-span-12 lg:col-span-9">
-            <app-card [padding]="false">
+          <main [class]="(viewState$ | async)?.showPreview || (viewState$ | async)?.showDetails ? 'col-span-12 lg:col-span-6' : 'col-span-12 lg:col-span-9'">
+            <app-card [padding]="false" class="h-full flex flex-col min-h-[600px]">
+              <!-- Toolbar Integration -->
+              <div class="border-b border-border-color">
+                <app-file-view-toolbar></app-file-view-toolbar>
+              </div>
+
               <!-- Folder Header -->
               <div class="p-4 border-b border-border-color bg-gradient-to-r from-primary-50 to-transparent dark:from-primary-900/20">
                 <div class="flex items-center justify-between">
@@ -200,137 +223,78 @@ import {
                 </div>
               }
 
-              <!-- Subfolders -->
-              @if (currentFolder()?.children?.length) {
-                <div class="p-4 border-b border-border-color">
-                  <h3 class="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Folders</h3>
-                  <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    @for (folder of currentFolder()?.children; track folder.id) {
-                      <button
-                        class="flex items-center gap-3 p-3 rounded-xl border border-border-color hover:border-primary-300 hover:bg-primary-50/50 dark:hover:bg-primary-900/20 transition-all group cursor-pointer"
-                        (click)="navigateToFolder(folder.id)"
-                      >
-                        <div class="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg group-hover:bg-amber-200 dark:group-hover:bg-amber-800/40 transition-colors">
-                          <ng-icon name="heroFolderSolid" size="20" class="text-amber-600"></ng-icon>
-                        </div>
-                        <div class="text-left overflow-hidden">
-                          <p class="font-medium text-text-primary truncate">{{ folder.name }}</p>
-                          <p class="text-xs text-text-secondary">
-                            {{ folder.fileCount }} files
-                            @if (folder.children.length) {
-                              · {{ folder.children.length }} folders
-                            }
-                          </p>
-                        </div>
-                        
-                        <!-- Folder Actions (Hover) -->
-                        @if (!['root', 'documents', 'years', 'year'].includes(folder.type)) {
-                          <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                            <button 
-                              class="p-1.5 bg-white/90 hover:bg-white rounded-lg shadow-sm text-text-secondary hover:text-primary-600 transition-colors"
-                              (click)="triggerFolderRename(folder); $event.stopPropagation()"
-                              title="Rename"
-                            >
-                              <ng-icon name="heroPencilSquareSolid" size="14"></ng-icon>
-                            </button>
-                            <button 
-                              class="p-1.5 bg-white/90 hover:bg-white rounded-lg shadow-sm text-text-secondary hover:text-red-600 transition-colors"
-                              (click)="triggerFolderDelete(folder); $event.stopPropagation()"
-                              title="Delete"
-                            >
-                              <ng-icon name="heroTrashSolid" size="14"></ng-icon>
-                            </button>
-                          </div>
-                        }
-                      </button>
-                    }
-                  </div>
-                </div>
-              }
+              <!-- View Content Area -->
+              <div class="flex-1 overflow-auto bg-white/50 dark:bg-gray-800/50 min-h-[400px]" [ngSwitch]="(viewState$ | async)?.viewMode">
+                @if (fileItems().length > 0) {
+                  <!-- Grid Views (Extra Large, Large, Medium, Small) -->
+                  <app-file-grid
+                    *ngSwitchCase="'extra-large'"
+                    [files]="fileItems()"
+                    viewMode="extra-large"
+                    (fileSelected)="onFileSelected($event)"
+                    (fileOpened)="onFileOpened($event)"
+                  ></app-file-grid>
+                  <app-file-grid
+                    *ngSwitchCase="'large'"
+                    [files]="fileItems()"
+                    viewMode="large"
+                    (fileSelected)="onFileSelected($event)"
+                    (fileOpened)="onFileOpened($event)"
+                  ></app-file-grid>
+                  <app-file-grid
+                    *ngSwitchCase="'medium'"
+                    [files]="fileItems()"
+                    viewMode="medium"
+                    (fileSelected)="onFileSelected($event)"
+                    (fileOpened)="onFileOpened($event)"
+                  ></app-file-grid>
+                  <app-file-grid
+                    *ngSwitchCase="'small'"
+                    [files]="fileItems()"
+                    viewMode="small"
+                    (fileSelected)="onFileSelected($event)"
+                    (fileOpened)="onFileOpened($event)"
+                  ></app-file-grid>
 
-              <!-- Files Grid -->
-              <div class="p-4">
-                @if (currentFolder()?.files?.length) {
-                  <h3 class="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Files</h3>
-                  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    @for (file of currentFolder()?.files; track file.id) {
-                      <div class="group relative bg-white dark:bg-gray-800 border border-border-color rounded-xl hover:border-primary-300 hover:shadow-lg transition-all duration-200 overflow-hidden">
-                        <!-- File Thumbnail/Icon -->
-                        <div class="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center relative overflow-hidden">
-                          @if (isImage(file.mimeType)) {
-                            @if (thumbnails()[file.id]) {
-                              <img [src]="thumbnails()[file.id]" [alt]="file.fileName" class="w-full h-full object-cover">
-                            } @else {
-                              <div class="absolute inset-0 flex items-center justify-center">
-                                <ng-icon name="heroPhotoSolid" size="48" class="text-blue-400"></ng-icon>
-                              </div>
-                            }
-                          } @else if (isPdf(file.mimeType)) {
-                            <div class="absolute inset-0 flex items-center justify-center">
-                              <ng-icon name="heroDocumentTextSolid" size="48" class="text-red-500"></ng-icon>
-                            </div>
-                          } @else {
-                            <div class="absolute inset-0 flex items-center justify-center">
-                              <ng-icon name="heroDocumentSolid" size="48" class="text-gray-400"></ng-icon>
-                            </div>
-                          }
-                          
-                          <!-- Hover Actions Overlay -->
-                          <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                            @if (isPdf(file.mimeType) || isImage(file.mimeType)) {
-                              <button
-                                class="p-2 bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur-sm transition-colors"
-                                title="Preview"
-                                (click)="previewFile(file)"
-                              >
-                                <ng-icon name="heroEyeSolid" size="20" class="text-white"></ng-icon>
-                              </button>
-                            }
-                            <button
-                              class="p-2 bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur-sm transition-colors"
-                              title="Download"
-                              (click)="downloadFile(file)"
-                            >
-                              <ng-icon name="heroArrowDownTraySolid" size="20" class="text-white"></ng-icon>
-                            </button>
-                            <button
-                              class="p-2 bg-white/20 hover:bg-white/30 rounded-lg backdrop-blur-sm transition-colors"
-                              title="Rename"
-                              (click)="renameFile(file)"
-                            >
-                              <ng-icon name="heroPencilSquareSolid" size="20" class="text-white"></ng-icon>
-                            </button>
-                            <button
-                              class="p-2 bg-red-500/80 hover:bg-red-600 rounded-lg backdrop-blur-sm transition-colors"
-                              title="Delete"
-                              (click)="deleteFile(file)"
-                            >
-                              <ng-icon name="heroTrashSolid" size="20" class="text-white"></ng-icon>
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <!-- File Info -->
-                        <div class="p-3">
-                          <p class="font-medium text-text-primary truncate text-sm" [title]="file.originalName">
-                            {{ file.originalName }}
-                          </p>
-                          <div class="flex items-center justify-between mt-1">
-                            <span class="text-xs text-text-secondary">{{ formatFileSize(file.size) }}</span>
-                            <span class="text-xs text-text-secondary">{{ formatDate(file.createdAt) }}</span>
-                          </div>
-                        </div>
-                      </div>
-                    }
-                  </div>
-                } @else if (!currentFolder()?.children?.length && !currentFolder()?.folderCount) {
+                  <!-- List View -->
+                  <app-file-list
+                    *ngSwitchCase="'list'"
+                    [files]="fileItems()"
+                    (fileSelected)="onFileSelected($event)"
+                    (fileOpened)="onFileOpened($event)"
+                  ></app-file-list>
+
+                  <!-- Details View -->
+                  <app-file-details
+                    *ngSwitchCase="'details'"
+                    [files]="fileItems()"
+                    (fileSelected)="onFileSelected($event)"
+                    (fileOpened)="onFileOpened($event)"
+                  ></app-file-details>
+
+                  <!-- Tiles & Content (Mapped to Grid for now) -->
+                  <app-file-grid
+                    *ngSwitchCase="'tiles'"
+                    [files]="fileItems()"
+                    viewMode="medium"
+                    (fileSelected)="onFileSelected($event)"
+                    (fileOpened)="onFileOpened($event)"
+                  ></app-file-grid>
+                  <app-file-grid
+                    *ngSwitchCase="'content'"
+                    [files]="fileItems()"
+                    viewMode="large"
+                    (fileSelected)="onFileSelected($event)"
+                    (fileOpened)="onFileOpened($event)"
+                  ></app-file-grid>
+                } @else {
                   <!-- Empty State -->
-                  <div class="text-center py-16">
-                    <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <ng-icon name="heroFolderSolid" size="32" class="text-gray-400"></ng-icon>
-                    </div>
-                    <h3 class="text-lg font-semibold text-text-primary mb-2">No files yet</h3>
-                    <p class="text-text-secondary mb-6">Upload files to get started</p>
+                  <div class="h-full flex flex-col items-center justify-center text-center p-8 opacity-60">
+                    <mat-icon class="text-6xl h-24 w-24 mb-4 text-gray-300">folder_open</mat-icon>
+                    <h3 class="text-xl font-medium mb-2">This folder is empty</h3>
+                    <p class="text-sm max-w-xs text-text-secondary mb-6">
+                      Drag and drop files here to upload or use the upload button above.
+                    </p>
                     <app-button variant="primary" size="md" (clicked)="triggerUpload()">
                       <ng-icon name="heroArrowUpTraySolid" class="mr-2" size="18"></ng-icon>
                       Upload Files
@@ -338,8 +302,47 @@ import {
                   </div>
                 }
               </div>
+
+              <!-- Status Bar -->
+              <footer class="px-4 py-2 bg-gray-50 border-t border-border-color flex items-center justify-between text-xs text-text-secondary select-none">
+                <div class="flex items-center gap-4">
+                  <span>{{ fileItems().length }} items</span>
+                  @if (selectedFile()) {
+                    <span class="text-primary-600 font-medium">1 item selected</span>
+                  }
+                </div>
+                <div class="flex items-center gap-3">
+                  <button class="hover:text-primary-600 transition-colors" title="List View" (click)="viewService.updateViewMode('list')">
+                    <mat-icon class="text-lg h-5 w-5">view_list</mat-icon>
+                  </button>
+                  <button class="hover:text-primary-600 transition-colors" title="Details View" (click)="viewService.updateViewMode('details')">
+                    <mat-icon class="text-lg h-5 w-5">view_headline</mat-icon>
+                  </button>
+                  <div class="w-px h-3 bg-gray-300 mx-1"></div>
+                  <button class="hover:text-primary-600 transition-colors" title="Grid View" (click)="viewService.updateViewMode('large')">
+                    <mat-icon class="text-lg h-5 w-5">grid_view</mat-icon>
+                  </button>
+                </div>
+              </footer>
             </app-card>
           </main>
+
+          <!-- Side Panes -->
+          @if ((viewState$ | async)?.showPreview) {
+            <aside class="col-span-12 lg:col-span-3 transition-all duration-300 animate-in slide-in-from-right-4">
+              <app-card [padding]="false" class="h-full">
+                <app-preview-pane [selectedFile]="selectedFile()"></app-preview-pane>
+              </app-card>
+            </aside>
+          }
+
+          @if ((viewState$ | async)?.showDetails) {
+            <aside class="col-span-12 lg:col-span-3 transition-all duration-300 animate-in slide-in-from-right-4">
+              <app-card [padding]="false" class="h-full">
+                <app-details-pane [selectedFile]="selectedFile()"></app-details-pane>
+              </app-card>
+            </aside>
+          }
         </div>
       }
 
@@ -533,7 +536,65 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   private workspaceService = inject(WorkspaceService);
   private toast = inject(ToastService);
   private sanitizer = inject(DomSanitizer);
+  public viewService = inject(ViewPreferenceService);
   private destroy$ = new Subject<void>();
+
+  // View state
+  viewState$ = this.viewService.state$;
+  selectedFile = signal<FileItem | null>(null);
+
+  // File items computed from current folder
+  fileItems = computed<FileItem[]>(() => {
+    const current = this.currentFolder();
+    if (!current) return [];
+
+    const folders: FileItem[] = (current.children || []).map(f => ({
+      id: f.id,
+      name: f.name,
+      type: 'folder',
+      modifiedDate: new Date(),
+      createdDate: new Date(),
+      owner: 'System',
+      path: f.slug || ''
+    }));
+
+    const files: FileItem[] = (current.files || []).map(f => ({
+      id: f.id,
+      name: f.originalName,
+      type: this.getFileType(f.mimeType),
+      size: f.size,
+      modifiedDate: new Date(f.createdAt),
+      createdDate: new Date(f.createdAt),
+      owner: f.uploadedBy?.name || 'System',
+      path: f.s3Path || '',
+      thumbnailUrl: this.thumbnails()[f.id]
+    }));
+
+    return [...folders, ...files];
+  });
+
+  private getFileType(mime: string): 'pdf' | 'image' | 'text' | 'unknown' {
+    if (mime.includes('pdf')) return 'pdf';
+    if (mime.includes('image')) return 'image';
+    if (mime.includes('text') || mime.includes('plain')) return 'text';
+    return 'unknown';
+  }
+
+  onFileSelected(file: FileItem) {
+    this.selectedFile.set(file);
+  }
+
+  onFileOpened(file: FileItem) {
+    if (file.type === 'folder') {
+      this.navigateToFolder(file.id);
+    } else {
+      // Find the FileNode to use existing preview logic
+      const fileNode = this.currentFolder()?.files.find(f => f.id === file.id);
+      if (fileNode) {
+        this.previewFile(fileNode);
+      }
+    }
+  }
 
   // State
   workspace = signal<WorkspaceTree | null>(null);

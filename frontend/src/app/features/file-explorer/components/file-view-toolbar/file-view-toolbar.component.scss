@@ -1,0 +1,55 @@
+:host {
+  display: block;
+}
+
+button[mat-button] {
+  font-weight: 500 !important;
+  color: var(--text-secondary) !important;
+  padding: var(--space-1) var(--space-3) !important;
+  border-radius: var(--radius-md) !important;
+  transition: all var(--transition-normal) var(--transition-timing);
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: var(--space-1) !important;
+
+  &:hover {
+    background-color: var(--border-subtle) !important;
+  }
+
+  // Handle dark mode via host-context or global .dark class
+  :host-context(.dark) & {
+    color: var(--text-muted) !important;
+
+    &:hover {
+      background-color: var(--surface-elevated) !important;
+    }
+  }
+
+  ::ng-deep .mat-mdc-button-touch-target {
+    display: none;
+  }
+
+  mat-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+::ng-deep {
+  .mat-mdc-menu-panel.file-explorer-menu {
+    border-radius: 12px !important;
+    margin-top: 8px !important;
+    background-color: var(--surface-color) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-dropdown) !important;
+
+    .dark & {
+      background-color: var(--surface-elevated) !important;
+      border-color: var(--border-color) !important;
+    }
+  }
+}
