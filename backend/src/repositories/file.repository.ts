@@ -31,11 +31,13 @@ export const fileRepository = {
    * Find file by ID
    */
   async findById(id: string): Promise<FileWithDetails | null> {
-    return File.findByPk(id, {
+    const file = await File.findOne({
+      where: { id },
       include: [
         {
           model: Folder,
           as: 'folder',
+          required: false // Keep allow null for safety
         },
         {
           model: User,
@@ -43,7 +45,9 @@ export const fileRepository = {
           attributes: ['id', 'name'],
         },
       ],
-    }) as Promise<FileWithDetails | null>;
+    });
+    // @ts-ignore
+    return file;
   },
 
   /**

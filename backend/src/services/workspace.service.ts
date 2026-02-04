@@ -246,16 +246,39 @@ export const workspaceService = {
     fileId: string,
     userId: string,
     userRole: string,
-    ip?: string
+    ip?: string,
+    skipLog?: boolean
   ): Promise<{ url: string; fileName: string }> {
+    logger.info(`[b] getFileDownloadUrl called for fileId: ${fileId} by user: ${userId}`);
+
     const file = await fileRepository.findById(fileId);
     if (!file) {
+      logger.error(`[b] File not found in repository: ${fileId}`);
+      try {
+        // Double check with direct query to verify if it's an association issue
+        const rawFile = await File.findByPk(fileId);
+        logger.info(`[b] Direct findByPk result: ${rawFile ? 'Found' : 'Not Found'}`);
+      } catch (e) {
+        logger.error(`[b] Error in direct query: ${(e as Error).message}`);
+      }
       throw new NotFoundError('File not found');
     }
 
-    const folder = file.folder;
+    let folder = file.folder;
     if (!folder) {
-      throw new NotFoundError('Folder not found');
+      logger.warn(`[b] Folder association missing for file: ${fileId}. Check DB constraints.`);
+      try {
+        const rawFolder = await folderRepository.findById(file.folderId);
+        if (rawFolder) {
+          logger.info(`[b] Recovered folder ${rawFolder.id} manually from DB`);
+          folder = rawFolder;
+        } else {
+          throw new NotFoundError('Folder not found in DB');
+        }
+      } catch (e) {
+        logger.error(`[b] Error in direct folder lookup: ${(e as Error).message}`);
+        throw new NotFoundError('Folder not found');
+      }
     }
 
     // For clients, verify access
@@ -270,13 +293,15 @@ export const workspaceService = {
     const url = await s3Helpers.getSignedDownloadUrl(file.s3Path);
 
     // Log the download
-    await logRepository.create({
-      userId,
-      action: 'FILE_DOWNLOADED',
-      description: `Downloaded ${file.originalName}`,
-      ip,
-      metadata: { fileId: file.id },
-    });
+    if (!skipLog) {
+      await logRepository.create({
+        userId,
+        action: 'FILE_DOWNLOADED',
+        description: `Downloaded ${file.originalName}`,
+        ip,
+        metadata: { fileId: file.id },
+      });
+    }
 
     return {
       url,

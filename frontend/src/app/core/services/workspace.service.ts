@@ -104,8 +104,12 @@ export class WorkspaceService {
   /**
    * Get file download URL
    */
-  getFileDownloadUrl(fileId: string): Observable<ApiResponse<{ url: string; fileName: string }>> {
-    return this.http.get<ApiResponse<{ url: string; fileName: string }>>(`${this.baseUrl}/files/${fileId}/download`);
+  getFileDownloadUrl(fileId: string, preview: boolean = false): Observable<ApiResponse<{ url: string; fileName: string }>> {
+    let params = new HttpParams();
+    if (preview) {
+      params = params.set('preview', 'true');
+    }
+    return this.http.get<ApiResponse<{ url: string; fileName: string }>>(`${this.baseUrl}/files/${fileId}/download`, { params });
   }
 
   /**

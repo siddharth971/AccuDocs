@@ -1,4 +1,5 @@
 import { Component, inject, signal, computed, effect, OnInit, OnDestroy, ChangeDetectionStrategy } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -255,11 +256,15 @@ import {
                     @for (file of currentFolder()?.files; track file.id) {
                       <div class="group relative bg-white dark:bg-gray-800 border border-border-color rounded-xl hover:border-primary-300 hover:shadow-lg transition-all duration-200 overflow-hidden">
                         <!-- File Thumbnail/Icon -->
-                        <div class="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center relative">
+                        <div class="aspect-[4/3] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center relative overflow-hidden">
                           @if (isImage(file.mimeType)) {
-                            <div class="absolute inset-0 flex items-center justify-center">
-                              <ng-icon name="heroPhotoSolid" size="48" class="text-blue-400"></ng-icon>
-                            </div>
+                            @if (thumbnails()[file.id]) {
+                              <img [src]="thumbnails()[file.id]" [alt]="file.fileName" class="w-full h-full object-cover">
+                            } @else {
+                              <div class="absolute inset-0 flex items-center justify-center">
+                                <ng-icon name="heroPhotoSolid" size="48" class="text-blue-400"></ng-icon>
+                              </div>
+                            }
                           } @else if (isPdf(file.mimeType)) {
                             <div class="absolute inset-0 flex items-center justify-center">
                               <ng-icon name="heroDocumentTextSolid" size="48" class="text-red-500"></ng-icon>
@@ -521,10 +526,13 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClientWorkspaceComponent implements OnInit, OnDestroy {
+  // Remove duplicate ngOnInit
+
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private workspaceService = inject(WorkspaceService);
   private toast = inject(ToastService);
+  private sanitizer = inject(DomSanitizer);
   private destroy$ = new Subject<void>();
 
   // State
@@ -533,8 +541,9 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   breadcrumbs = signal<Breadcrumb[]>([]);
   isLoading = signal(true);
   uploadProgress = signal(0);
+  thumbnails = signal<Record<string, SafeResourceUrl>>({}); // Store thumbnails using SafeResourceUrl
 
-  // Modal states
+  // File Action States
   showRenameModal = signal(false);
   showDeleteModal = signal(false);
   showPreviewModal = signal(false);
@@ -542,7 +551,10 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   fileToDelete = signal<FileNode | null>(null);
   fileToPreview = signal<FileNode | null>(null);
   newFileName = '';
-  previewUrl = signal<string | null>(null);
+  previewUrl = signal<SafeResourceUrl | null>(null);
+
+  // ... (rest of state)
+
 
   // Folder modal states
   showFolderModal = signal(false);
@@ -597,6 +609,9 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
           this.workspace.set(response.data);
           this.currentFolder.set(response.data.rootFolder);
           this.breadcrumbs.set([]);
+          if (response.data.rootFolder.files) {
+            this.loadThumbnails(response.data.rootFolder.files);
+          }
         },
         error: (error) => {
           this.toast.error('Failed to load workspace', error.message);
@@ -613,8 +628,12 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
 
   navigateToRoot() {
     if (this.workspace()) {
-      this.currentFolder.set(this.workspace()!.rootFolder);
+      const root = this.workspace()!.rootFolder;
+      this.currentFolder.set(root);
       this.breadcrumbs.set([]);
+      if (root.files) {
+        this.loadThumbnails(root.files);
+      }
     }
   }
 
@@ -630,6 +649,9 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
       const folderInTree = this.findFolderInTree(this.workspace()!.rootFolder, folderId);
       if (folderInTree) {
         this.currentFolder.set(folderInTree);
+        if (folderInTree.files) {
+          this.loadThumbnails(folderInTree.files);
+        }
       }
     }
 
@@ -648,6 +670,10 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
 
           this.currentFolder.set(folder);
           this.breadcrumbs.set(response.data.breadcrumbs.slice(1)); // Remove root from breadcrumbs
+
+          if (folder.files) {
+            this.loadThumbnails(folder.files);
+          }
         },
         error: (error) => {
           this.toast.error('Failed to load folder', error.message);
@@ -776,7 +802,9 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          this.previewUrl.set(response.data.url);
+          // Sanitize the URL to allow it to be used in an iframe
+          const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(response.data.url);
+          this.previewUrl.set(safeUrl);
         },
         error: (error) => {
           this.toast.error('Failed to load preview', error.message);
@@ -873,6 +901,26 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
           }
         });
     }
+
+  }
+
+  loadThumbnails(files: FileNode[]) {
+    files.forEach(file => {
+      // Only load thumbnails for images that don't have one yet
+      if (this.isImage(file.mimeType) && !this.thumbnails()[file.id]) {
+        this.workspaceService.getFileDownloadUrl(file.id, true) // Pass true for preview mode (skip log)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response) => {
+              const safeUrl = this.sanitizer.bypassSecurityTrustResourceUrl(response.data.url);
+              this.thumbnails.update(prev => ({ ...prev, [file.id]: safeUrl }));
+            },
+            error: () => {
+              // Silently fail for thumbnails
+            }
+          });
+      }
+    });
   }
 
   confirmFolderDelete() {

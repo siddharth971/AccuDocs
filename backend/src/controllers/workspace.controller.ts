@@ -9,7 +9,7 @@ export const workspaceController = {
   async getClientWorkspace(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { clientId } = req.params;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const userRole = req.user!.role;
 
       const workspace = await workspaceService.getClientWorkspace(clientId, userId, userRole);
@@ -30,7 +30,7 @@ export const workspaceController = {
   async getFolderContents(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { folderId } = req.params;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const userRole = req.user!.role;
 
       const contents = await workspaceService.getFolderContents(folderId, userId, userRole);
@@ -52,7 +52,7 @@ export const workspaceController = {
     try {
       const { folderId } = req.body;
       const file = req.file;
-      const uploaderId = req.user!.id;
+      const uploaderId = req.user!.userId;
       const ip = req.ip;
 
       if (!file) {
@@ -99,11 +99,12 @@ export const workspaceController = {
   async getFileDownloadUrl(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { fileId } = req.params;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const userRole = req.user!.role;
       const ip = req.ip;
+      const skipLog = req.query.preview === 'true';
 
-      const result = await workspaceService.getFileDownloadUrl(fileId, userId, userRole, ip);
+      const result = await workspaceService.getFileDownloadUrl(fileId, userId, userRole, ip, skipLog);
 
       res.json({
         success: true,
@@ -121,7 +122,7 @@ export const workspaceController = {
   async deleteFile(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { fileId } = req.params;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const ip = req.ip;
 
       await workspaceService.deleteFile(fileId, userId, ip);
@@ -139,7 +140,7 @@ export const workspaceController = {
     try {
       const { fileId } = req.params;
       const { name } = req.body;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const ip = req.ip;
 
       if (!name) {
@@ -169,7 +170,7 @@ export const workspaceController = {
     try {
       const { fileId } = req.params;
       const { targetFolderId } = req.body;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const ip = req.ip;
 
       if (!targetFolderId) {
@@ -198,7 +199,7 @@ export const workspaceController = {
   async createFolder(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { parentFolderId, name } = req.body;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const ip = req.ip;
 
       if (!parentFolderId || !name) {
@@ -227,7 +228,7 @@ export const workspaceController = {
   async deleteFolder(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { folderId } = req.params;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const ip = req.ip;
 
       await workspaceService.deleteFolder(folderId, userId, ip);
@@ -245,7 +246,7 @@ export const workspaceController = {
     try {
       const { folderId } = req.params;
       const { name } = req.body;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const ip = req.ip;
 
       if (!name) {
@@ -275,7 +276,7 @@ export const workspaceController = {
     try {
       const { clientId } = req.params;
       const { year } = req.body;
-      const userId = req.user!.id;
+      const userId = req.user!.userId;
       const ip = req.ip;
 
       if (!year) {
