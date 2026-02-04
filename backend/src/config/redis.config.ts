@@ -192,4 +192,20 @@ export const redisHelpers = {
     const key = `whatsapp_session:${mobile}`;
     await redis.del(key);
   },
+
+  async setTelegramSession(chatId: string, sessionData: object, expirySeconds: number = 1800): Promise<void> {
+    const key = `telegram:session:${chatId}`;
+    await redis.setex(key, expirySeconds, JSON.stringify(sessionData));
+  },
+
+  async getTelegramSession(chatId: string): Promise<object | null> {
+    const key = `telegram:session:${chatId}`;
+    const data = await redis.get(key);
+    return data ? JSON.parse(data) : null;
+  },
+
+  async deleteTelegramSession(chatId: string): Promise<void> {
+    const key = `telegram:session:${chatId}`;
+    await redis.del(key);
+  },
 };

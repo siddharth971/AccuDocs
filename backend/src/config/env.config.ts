@@ -52,6 +52,11 @@ export const config = {
     apiVersion: process.env.META_API_VERSION || 'v19.0',
   },
 
+  telegram: {
+    botToken: process.env.TELEGRAM_BOT_TOKEN || '',
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || 'default-secret',
+  },
+
   otp: {
     length: parseInt(process.env.OTP_LENGTH || '6', 10),
     expiryMinutes: parseInt(process.env.OTP_EXPIRY_MINUTES || '5', 10),
