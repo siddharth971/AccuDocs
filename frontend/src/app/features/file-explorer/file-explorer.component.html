@@ -10,19 +10,27 @@
       <ng-container [ngSwitch]="state.viewMode">
         <!-- Icon Views (Extra Large, Large, Medium, Small) -->
         <app-file-grid *ngSwitchCase="'extra-large'" [files]="files" [viewMode]="'extra-large'"
-          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+          [activeFile]="selectedFile" (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
+          (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
         </app-file-grid>
 
-        <app-file-grid *ngSwitchCase="'large'" [files]="files" [viewMode]="'large'"
-          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        <app-file-grid *ngSwitchCase="'large'" [files]="files" [viewMode]="'large'" [activeFile]="selectedFile"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
+          (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
         </app-file-grid>
 
-        <app-file-grid *ngSwitchCase="'medium'" [files]="files" [viewMode]="'medium'"
-          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        <app-file-grid *ngSwitchCase="'medium'" [files]="files" [viewMode]="'medium'" [activeFile]="selectedFile"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
+          (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
         </app-file-grid>
 
-        <app-file-grid *ngSwitchCase="'small'" [files]="files" [viewMode]="'small'"
-          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        <app-file-grid *ngSwitchCase="'small'" [files]="files" [viewMode]="'small'" [activeFile]="selectedFile"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
+          (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
         </app-file-grid>
 
         <!-- List View -->
@@ -36,13 +44,17 @@
         </app-file-details>
 
         <!-- Tiles View (Using grid with medium icons and more info) -->
-        <app-file-grid *ngSwitchCase="'tiles'" [files]="files" [viewMode]="'medium'"
-          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        <app-file-grid *ngSwitchCase="'tiles'" [files]="files" [viewMode]="'medium'" [activeFile]="selectedFile"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
+          (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
         </app-file-grid>
 
         <!-- Content View (Using grid with large icons) -->
-        <app-file-grid *ngSwitchCase="'content'" [files]="files" [viewMode]="'large'"
-          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)">
+        <app-file-grid *ngSwitchCase="'content'" [files]="files" [viewMode]="'large'" [activeFile]="selectedFile"
+          (fileSelected)="onFileSelected($event)" (fileOpened)="onFileOpened($event)"
+          (fileRenamed)="onFileRenamed($event)" (filePreviewed)="onFilePreviewed($event)"
+          (fileDownloaded)="onFileDownloaded($event)" (fileDeleted)="onFileDeleted($event)">
         </app-file-grid>
 
         <div *ngSwitchDefault class="p-8 text-center text-slate-400">
@@ -56,7 +68,7 @@
       <app-details-pane [selectedFile]="selectedFile"></app-details-pane>
     </aside>
 
-    <aside *ngIf="state.showPreview" class="animate-in slide-in-from-right duration-300">
+    <aside *ngIf="(viewState$ | async)?.showPreview" class="animate-in slide-in-from-right duration-300">
       <app-preview-pane [selectedFile]="selectedFile"></app-preview-pane>
     </aside>
   </div>

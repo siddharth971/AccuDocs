@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { FileViewToolbarComponent } from './components/file-view-toolbar/file-view-toolbar.component';
@@ -9,6 +9,8 @@ import { DetailsPaneComponent } from './components/details-pane/details-pane.com
 import { PreviewPaneComponent } from './components/preview-pane/preview-pane.component';
 import { ViewPreferenceService } from './services/view-preference.service';
 import { FileItem } from './models/file-explorer.models';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-file-explorer',
@@ -21,7 +23,8 @@ import { FileItem } from './models/file-explorer.models';
     FileDetailsComponent,
     DetailsPaneComponent,
     PreviewPaneComponent,
-    MatIconModule
+    MatIconModule,
+    MatDialogModule
   ],
   templateUrl: './file-explorer.component.html',
   styleUrls: ['./file-explorer.component.scss']
@@ -31,7 +34,11 @@ export class FileExplorerComponent implements OnInit {
   files: FileItem[] = []; // This would typically come from a DataService
   selectedFile: FileItem | null = null;
 
-  constructor(public viewService: ViewPreferenceService) { }
+  constructor(
+    public viewService: ViewPreferenceService,
+    private dialog: MatDialog,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit() {
     this.loadMockFiles();
@@ -48,6 +55,52 @@ export class FileExplorerComponent implements OnInit {
     } else {
       console.log('Opening file:', file.name);
     }
+  }
+
+  onFileRenamed(event: { file: FileItem, newName: string }) {
+    if (event.newName && event.newName !== event.file.name) {
+      console.log('Renaming file:', event.file.name, 'to', event.newName);
+      event.file.name = event.newName;
+      // In a real app, you would call a service to update the backend
+    }
+  }
+
+  onFilePreviewed(file: FileItem) {
+    console.log('FileExplorer: onFilePreviewed called for', file.name);
+    this.selectedFile = file;
+    this.viewService.setPreview(true);
+    this.cdr.detectChanges(); // Force immediate UI update
+    console.log('FileExplorer: Preview state set to true');
+  }
+
+  onFileDownloaded(file: FileItem) {
+    console.log('Downloading file:', file.name);
+    // Logic for downloading
+    const link = document.createElement('a');
+    link.href = '#'; // Mock URL
+    link.download = file.name;
+    link.click();
+  }
+
+  onFileDeleted(file: FileItem) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      data: {
+        title: 'Delete File',
+        message: `Are you sure you want to delete "${file.name}"?`,
+        confirmText: 'Delete',
+        color: 'warn'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        console.log('Deleting file:', file.name);
+        this.files = this.files.filter(f => f.id !== file.id);
+        if (this.selectedFile?.id === file.id) {
+          this.selectedFile = null;
+        }
+      }
+    });
   }
 
   private loadMockFiles() {

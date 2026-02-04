@@ -17,11 +17,11 @@ import { ToastContainerComponent } from '@shared/components/toast-container/toas
     >
       <!-- Fixed Icon Sidebar -->
       <app-sidebar></app-sidebar>
+      <app-header></app-header>
 
       <!-- Main Content Wrapper (offset for sidebar) -->
       <div class="ml-20 flex flex-col h-screen overflow-hidden">
         <!-- Sticky Header -->
-        <app-header></app-header>
 
         <!-- Scrollable Content Area (offset for fixed header) -->
         <main class="flex-1 flex flex-col pt-24 px-8 pb-8 bg-slate-50 dark:bg-slate-900 transition-all duration-300 min-h-0">

@@ -221,6 +221,10 @@ import { MatIconModule } from '@angular/material/icon';
                     viewMode="extra-large"
                     (fileSelected)="onFileSelected($event)"
                     (fileOpened)="onFileOpened($event)"
+                    (fileRenamed)="onFileRenamed($event)"
+                    (filePreviewed)="onFilePreviewed($event)"
+                    (fileDownloaded)="onFileDownloaded($event)"
+                    (fileDeleted)="onFileDeleted($event)"
                   ></app-file-grid>
                   <app-file-grid
                     *ngSwitchCase="'large'"
@@ -228,6 +232,10 @@ import { MatIconModule } from '@angular/material/icon';
                     viewMode="large"
                     (fileSelected)="onFileSelected($event)"
                     (fileOpened)="onFileOpened($event)"
+                    (fileRenamed)="onFileRenamed($event)"
+                    (filePreviewed)="onFilePreviewed($event)"
+                    (fileDownloaded)="onFileDownloaded($event)"
+                    (fileDeleted)="onFileDeleted($event)"
                   ></app-file-grid>
                   <app-file-grid
                     *ngSwitchCase="'medium'"
@@ -235,6 +243,10 @@ import { MatIconModule } from '@angular/material/icon';
                     viewMode="medium"
                     (fileSelected)="onFileSelected($event)"
                     (fileOpened)="onFileOpened($event)"
+                    (fileRenamed)="onFileRenamed($event)"
+                    (filePreviewed)="onFilePreviewed($event)"
+                    (fileDownloaded)="onFileDownloaded($event)"
+                    (fileDeleted)="onFileDeleted($event)"
                   ></app-file-grid>
                   <app-file-grid
                     *ngSwitchCase="'small'"
@@ -242,6 +254,10 @@ import { MatIconModule } from '@angular/material/icon';
                     viewMode="small"
                     (fileSelected)="onFileSelected($event)"
                     (fileOpened)="onFileOpened($event)"
+                    (fileRenamed)="onFileRenamed($event)"
+                    (filePreviewed)="onFilePreviewed($event)"
+                    (fileDownloaded)="onFileDownloaded($event)"
+                    (fileDeleted)="onFileDeleted($event)"
                   ></app-file-grid>
 
                   <!-- List View -->
@@ -267,6 +283,10 @@ import { MatIconModule } from '@angular/material/icon';
                     viewMode="medium"
                     (fileSelected)="onFileSelected($event)"
                     (fileOpened)="onFileOpened($event)"
+                    (fileRenamed)="onFileRenamed($event)"
+                    (filePreviewed)="onFilePreviewed($event)"
+                    (fileDownloaded)="onFileDownloaded($event)"
+                    (fileDeleted)="onFileDeleted($event)"
                   ></app-file-grid>
                   <app-file-grid
                     *ngSwitchCase="'content'"
@@ -274,6 +294,10 @@ import { MatIconModule } from '@angular/material/icon';
                     viewMode="large"
                     (fileSelected)="onFileSelected($event)"
                     (fileOpened)="onFileOpened($event)"
+                    (fileRenamed)="onFileRenamed($event)"
+                    (filePreviewed)="onFilePreviewed($event)"
+                    (fileDownloaded)="onFileDownloaded($event)"
+                    (fileDeleted)="onFileDeleted($event)"
                   ></app-file-grid>
                 } @else {
                   <!-- Empty State -->
@@ -581,6 +605,52 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
       if (fileNode) {
         this.previewFile(fileNode);
       }
+    }
+  }
+
+  onFileRenamed(event: { file: FileItem, newName: string }) {
+    console.log('Workspace: onFileRenamed called for', event.file.name, 'new name:', event.newName);
+    const fileNode = this.currentFolder()?.files.find(f => f.id === event.file.id);
+    if (fileNode && event.newName) {
+      // Directly call rename API with new name
+      this.workspaceService.renameFile(fileNode.id, event.newName)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.toast.success('File renamed successfully');
+            // Refresh current folder
+            this.navigateToFolder(this.currentFolder()!.id);
+          },
+          error: (error) => {
+            this.toast.error('Rename failed', error.message);
+          }
+        });
+    }
+  }
+
+  onFilePreviewed(file: FileItem) {
+    console.log('Workspace: onFilePreviewed called for', file.name);
+    if (file.type === 'folder') return;
+
+    const fileNode = this.currentFolder()?.files.find(f => f.id === file.id);
+    if (fileNode) {
+      this.previewFile(fileNode);
+    }
+  }
+
+  onFileDownloaded(file: FileItem) {
+    console.log('Workspace: onFileDownloaded called for', file.name);
+    const fileNode = this.currentFolder()?.files.find(f => f.id === file.id);
+    if (fileNode) {
+      this.downloadFile(fileNode);
+    }
+  }
+
+  onFileDeleted(file: FileItem) {
+    console.log('Workspace: onFileDeleted called for', file.name);
+    const fileNode = this.currentFolder()?.files.find(f => f.id === file.id);
+    if (fileNode) {
+      this.deleteFile(fileNode);
     }
   }
 

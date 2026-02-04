@@ -1,12 +1,46 @@
 <div class="grid-container" [ngClass]="viewMode">
   <div class="file-card" *ngFor="let file of files; trackBy: trackById" (click)="onFileClick(file)"
-    (dblclick)="onFileDoubleClick(file)" [matTooltip]="file.name">
+    (dblclick)="onFileDoubleClick(file)" [class.active]="file === activeFile"
+    [class.editing]="editingFileId === file.id" (contextmenu)="onContextMenu($event, file)">
     <div class="icon-wrapper">
       <mat-icon [style.font-size.px]="getIconSize()">{{ getFileIcon(file.type) }}</mat-icon>
       <div class="folder-badge" *ngIf="file.type === 'folder'"></div>
     </div>
-    <div class="file-name text-truncate">
+
+    <!-- Normal file name display -->
+    <div class="file-name text-truncate" *ngIf="editingFileId !== file.id">
       {{ file.name }}
     </div>
+
+    <!-- Inline rename input -->
+    <input *ngIf="editingFileId === file.id" type="text" class="inline-rename-input" [(ngModel)]="editingFileName"
+      (blur)="confirmRename(file)" (keydown)="onRenameKeydown($event, file)" (click)="$event.stopPropagation()" />
   </div>
 </div>
+
+<!-- Hidden Trigger for Context Menu -->
+<div style="visibility: hidden; position: fixed" [style.left]="contextMenuPosition.x"
+  [style.top]="contextMenuPosition.y" [matMenuTriggerFor]="contextMenu">
+</div>
+
+<!-- Context Menu -->
+<mat-menu #contextMenu="matMenu">
+  <ng-template matMenuContent let-item="item">
+    <button type="button" mat-menu-item (click)="onPreview($event, item)">
+      <mat-icon>visibility</mat-icon>
+      <span>Preview</span>
+    </button>
+    <button type="button" mat-menu-item (click)="onRename($event, item)">
+      <mat-icon>edit</mat-icon>
+      <span>Rename</span>
+    </button>
+    <button type="button" mat-menu-item (click)="onDownload($event, item)">
+      <mat-icon>download</mat-icon>
+      <span>Download</span>
+    </button>
+    <button type="button" mat-menu-item (click)="onDelete($event, item)" class="delete-menu-item">
+      <mat-icon color="warn">delete</mat-icon>
+      <span style="color: #ef4444">Delete</span>
+    </button>
+  </ng-template>
+</mat-menu>
