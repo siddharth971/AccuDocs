@@ -2,7 +2,7 @@ import { createApp } from './app';
 import { config, validateConfig, connectDatabase, connectRedis, disconnectDatabase, disconnectRedis } from './config';
 import { initializeAssociations } from './models';
 import { logger } from './utils/logger';
-import { authService } from './services';
+import { authService, whatsappService } from './services';
 
 const startServer = async (): Promise<void> => {
   try {
@@ -35,6 +35,9 @@ const startServer = async (): Promise<void> => {
       // Admin already exists, which is fine
       logger.debug('Default admin already exists');
     }
+
+    // Initialize WhatsApp Client
+    whatsappService.initialize();
 
     // Create and start Express app
     const app = createApp();

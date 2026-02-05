@@ -35,7 +35,7 @@ Year.init(
       type: DataTypes.STRING(4),
       allowNull: false,
       validate: {
-        is: /^20(2[1-9]|30)$/,
+        is: /^20[1-9][0-9]$/,
       },
     },
     clientId: {

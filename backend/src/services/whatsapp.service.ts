@@ -1,9 +1,11 @@
 
-import axios from 'axios';
+import { Client, LocalAuth } from 'whatsapp-web.js';
+import * as qrcode from 'qrcode-terminal';
 import { config } from '../config';
 import { redisHelpers } from '../config';
 import { logger } from '../utils/logger';
-import { clientRepository, yearRepository, documentRepository } from '../repositories';
+import { clientRepository, yearRepository, documentRepository, userRepository, folderRepository, fileRepository } from '../repositories';
+import { authService } from './auth.service';
 import { s3Helpers } from '../config/s3.config';
 
 // WhatsApp session states
@@ -11,61 +13,90 @@ export type SessionState =
   | 'INITIAL'
   | 'AWAITING_OTP'
   | 'AUTHENTICATED'
-  | 'SELECTING_YEAR'
-  | 'SELECTING_FILE';
+  | 'EXPLORING_FOLDER';
 
 export interface WhatsAppSession {
   state: SessionState;
   userId?: string;
   clientId?: string;
   clientCode?: string;
-  selectedYear?: string;
-  yearId?: string;
+  currentFolderId?: string;
   lastActivity: number;
 }
 
+let client: Client;
+
 export const whatsappService = {
   /**
-   * Send a WhatsApp message via Meta Cloud API
+   * Initialize WhatsApp Client
+   */
+  initialize(): void {
+    logger.info('Initializing WhatsApp Client...');
+
+    client = new Client({
+      authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
+      puppeteer: {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      }
+    });
+
+    client.on('qr', (qr) => {
+      logger.info('QR Code received. Scan it with your phone:');
+      qrcode.generate(qr, { small: true });
+    });
+
+    client.on('ready', () => {
+      logger.info('✅ WhatsApp Client is ready!');
+    });
+
+    client.on('authenticated', () => {
+      logger.info('✅ WhatsApp Client authenticated!');
+    });
+
+    client.on('auth_failure', (msg) => {
+      logger.error('❌ WhatsApp Authentication failure:', msg);
+    });
+
+    client.on('message', async (msg) => {
+      try {
+        if (msg.from.includes('@g.us')) return; // Ignore group messages
+
+        // Process message and get response
+        const response = await this.processMessage(msg.from, msg.body);
+
+        if (response) {
+          await msg.reply(response);
+          logger.info(`Replied to ${msg.from}`);
+        }
+      } catch (err) {
+        logger.error('Error handling message:', err);
+      }
+    });
+
+    client.initialize();
+  },
+
+  /**
+   * Send a WhatsApp message
    */
   async sendMessage(to: string, body: string): Promise<void> {
-    if (!config.meta.phoneNumberId || !config.meta.accessToken) {
-      logger.warn('Meta WhatsApp configuration missing, logging message instead');
-      logger.debug(`WhatsApp message to ${to}: ${body}`);
+    if (!client) {
+      logger.warn('WhatsApp client not initialized');
       return;
     }
 
     try {
-      // Meta requires plain number without 'whatsapp:' prefix, but with country code
-      // We assume 'to' comes in roughly E.164 format or is cleaned up
-      const formattedTo = to.replace(/\D/g, ''); // Remove non-digits
-
-      const url = `https://graph.facebook.com/${config.meta.apiVersion}/${config.meta.phoneNumberId}/messages`;
-
-      await axios.post(
-        url,
-        {
-          messaging_product: 'whatsapp',
-          recipient_type: 'individual',
-          to: formattedTo,
-          type: 'text',
-          text: { body: body } // Meta supports max 4096 chars
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${config.meta.accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      logger.info(`WhatsApp message sent to ${to} via Meta Cloud API`);
-    } catch (error: any) {
-      logger.error(`Failed to send WhatsApp message: ${error.response?.data?.error?.message || error.message}`);
-      // Log full error for debugging
-      if (error.response?.data) {
-        logger.debug(JSON.stringify(error.response.data));
+      // Ensure 'to' is successfully formatted for whatsapp-web.js
+      let chatId = to;
+      if (!chatId.includes('@')) {
+        chatId = `${to.replace(/\D/g, '')}@c.us`;
       }
+
+      await client.sendMessage(chatId, body);
+      logger.info(`WhatsApp message sent to ${chatId}`);
+    } catch (error: any) {
+      logger.error(`Failed to send WhatsApp message: ${error.message}`);
       throw error;
     }
   },
@@ -143,12 +174,8 @@ export const whatsappService = {
         response = await this.handleAuthenticatedState(mobile, message, session);
         break;
 
-      case 'SELECTING_YEAR':
-        response = await this.handleYearSelection(mobile, message, session);
-        break;
-
-      case 'SELECTING_FILE':
-        response = await this.handleFileSelection(mobile, message, session);
+      case 'EXPLORING_FOLDER':
+        response = await this.handleFolderExploration(mobile, message, session);
         break;
 
       default:
@@ -166,30 +193,36 @@ export const whatsappService = {
 
     if (greetings.some(g => message.includes(g))) {
       // Check if user exists
-      // Note: Repository search might expect '+91...' format depending on how it's stored
-      // We try both formats
-      const searchMobile = mobile.startsWith('91') ? `+${mobile}` : mobile;
-      const client = await clientRepository.findAll({ search: searchMobile });
+      // Check if user exists via UserRepository for precise mobile matching
+      // Store formatted number for search
+      const formattedMobile = mobile.startsWith('91') ? `+${mobile}` : mobile;
 
-      // Fallback search without plus
-      let finalClient = client.clients.length > 0 ? client.clients[0] : null;
+      // Try with + prefix first (standard format)
+      let user = await userRepository.findByMobile(formattedMobile);
 
-      if (!finalClient && mobile.length > 10) {
-        // Try fuzzy search or precise match logic
-        // For now simplified
+      // If not found and input didn't have +, try bare number? 
+      // (The above logic handles adding +, but if DB has '9188...' without +, we might need to check that)
+      // Actually usually we store with +.
+
+      let finalClient = null;
+      if (user) {
+        finalClient = await clientRepository.findByUserId(user.id);
       }
 
       if (finalClient) {
+        // SKIP OTP Authentication as requested
         await this.updateSession(mobile, {
-          state: 'AWAITING_OTP',
+          state: 'AUTHENTICATED',
           clientId: finalClient.id,
           clientCode: finalClient.code,
         });
 
-        // In a real app, trigger the auth service to generate and send OTP
-        // For this flow, we will return the message that would prompt the user
-        // The controller should handle calling authService.generateOTP()
-        return `👋 *Welcome to AccuDocs!*\n\nWe'll send you an OTP to verify your identity.\n\n📱 Please wait for your OTP...`;
+        return await this.showMainMenu(mobile, {
+          state: 'AUTHENTICATED',
+          clientId: finalClient.id,
+          clientCode: finalClient.code,
+          lastActivity: Date.now()
+        });
       } else {
         return `❌ *Access Denied*\n\nYour mobile number (${mobile}) is not registered with AccuDocs.\n\nPlease contact your accountant to get registered.`;
       }
@@ -207,20 +240,17 @@ export const whatsappService = {
       return `⚠️ Please enter a valid 6-digit OTP code.`;
     }
 
-    // OTP verification is handled by auth service calling into this service
-    // But since this is the conversational logic, we assume we might need to verify here
-    // or the controller intercepts the message first.
-    // For now, let's assume successful verification moves state to AUTHENTICATED
+    try {
+      const formattedMobile = mobile.startsWith('91') ? `+${mobile}` : mobile;
+      await authService.verifyOTP(formattedMobile, otp.trim());
 
-    // In this architecture, the controller intercepts the OTP message, verifies it via AuthService,
-    // and if successful, updates the session.
-    // If we reached here, it means the controller didn't intercept or verification failed?
-    // Actually, the controller logic says: "If session is AWAITING_OTP and msg is digits -> Verify"
-    // So this method might not be reached if verification succeeds?
-    // OR this method IS reached if verification FAILS?
-
-    return `⚠️ Invalid OTP or Expired. Please try login again by saying "Hi".`;
+      await this.updateSession(mobile, { state: 'AUTHENTICATED' });
+      return await this.showMainMenu(mobile, session);
+    } catch (error: any) {
+      return `❌ ${error.message || 'Invalid OTP'}. Please try again or say "Hi" to restart.`;
+    }
   },
+
 
   /**
    * Handle authenticated state
@@ -231,24 +261,11 @@ export const whatsappService = {
     }
 
     if (message === 'documents' || message === 'd' || message === '1') {
-      const years = await yearRepository.findByClientId(session.clientId!);
-
-      if (years.length === 0) {
-        return `📁 *No Documents Available*\n\nNo year folders have been created yet.\nPlease contact your accountant.`;
+      const rootFolder = await folderRepository.findRootByClientId(session.clientId!);
+      if (!rootFolder) {
+        return `📁 *No Documents Available*\n\nYour account has no folders. Please contact your accountant.`;
       }
-
-      let yearList = `📅 *Select Year*\n\nPlease choose a year:\n\n`;
-      years.forEach((year, index) => {
-        const docCount = year.documents?.length || 0;
-        yearList += `${index + 1}. ${year.year} (${docCount} files)\n`;
-      });
-      yearList += `\n📝 Reply with the year number (e.g., "1" for ${years[0].year})`;
-
-      await this.updateSession(mobile, {
-        state: 'SELECTING_YEAR',
-      });
-
-      return yearList;
+      return await this.listFolderContents(mobile, rootFolder.id, session);
     }
 
     if (message === 'logout' || message === 'exit' || message === '0') {
@@ -260,83 +277,114 @@ export const whatsappService = {
   },
 
   /**
-   * Handle year selection
+   * List folder contents and update session
    */
-  async handleYearSelection(mobile: string, message: string, session: WhatsAppSession): Promise<string> {
+  async listFolderContents(mobile: string, folderId: string, session: WhatsAppSession): Promise<string> {
+    const folder = await folderRepository.findById(folderId);
+    if (!folder) return `❌ Folder not found.`;
+
+    const subfolders = await folderRepository.findByParentId(folderId);
+    // Sort: Years descending, others alphabetical
+    subfolders.sort((a, b) => {
+      const aIsYear = /^\d{4}$/.test(a.name);
+      const bIsYear = /^\d{4}$/.test(b.name);
+      if (aIsYear && bIsYear) return b.name.localeCompare(a.name); // 2026 before 2025
+      return a.name.localeCompare(b.name);
+    });
+
+    const files = (folder as any).files || folder.get('files') || [];
+    logger.debug(`Folder ${folder.name} (${folderId}) contents: ${subfolders.length} subfolders, ${files.length} files`);
+
+    files.sort((a: any, b: any) => (a.originalName || a.fileName).localeCompare(b.originalName || b.fileName));
+
+    const totalItems = subfolders.length + files.length;
+    if (totalItems === 0) {
+      // If root is empty
+      if (!folder.parentId) {
+        return `📁 *No Documents Available*\n\nNo folders or files have been created yet.`;
+      }
+      return `📁 *${folder.name}*\n\nThis folder is empty.\n\n↩️ Type "back" to go up or "menu" for main menu.`;
+    }
+
+    let response = `📁 *${folder.name}*\n\n`;
+    let count = 1;
+
+    subfolders.forEach((sub) => {
+      response += `${count++}. 📁 ${sub.name}\n`;
+    });
+
+    files.forEach((file: any) => {
+      const sizeKB = Math.round(file.size / 1024);
+      response += `${count++}. 📄 ${file.originalName || file.fileName} (${sizeKB}KB)\n`;
+    });
+
+    response += `\n📝 Reply with the item number.\n↩️ Type "back" to go up.`;
+
+    await this.updateSession(mobile, {
+      state: 'EXPLORING_FOLDER',
+      currentFolderId: folderId
+    });
+
+    return response;
+  },
+
+  /**
+   * Handle dynamic folder exploration (multi-level)
+   */
+  async handleFolderExploration(mobile: string, message: string, session: WhatsAppSession): Promise<string> {
     if (message === 'back' || message === 'b') {
+      const currentFolder = await folderRepository.findById(session.currentFolderId!);
+      if (!currentFolder || !currentFolder.parentId) {
+        await this.updateSession(mobile, { state: 'AUTHENTICATED' });
+        return await this.showMainMenu(mobile, session);
+      }
+      return await this.listFolderContents(mobile, currentFolder.parentId, session);
+    }
+
+    if (message === 'menu' || message === 'm') {
       await this.updateSession(mobile, { state: 'AUTHENTICATED' });
       return await this.showMainMenu(mobile, session);
     }
 
-    const years = await yearRepository.findByClientId(session.clientId!);
-    const selection = parseInt(message, 10);
+    const currentFolder = await folderRepository.findById(session.currentFolderId!);
+    if (!currentFolder) return `❌ Session error. Type "menu" to restart.`;
 
-    if (isNaN(selection) || selection < 1 || selection > years.length) {
-      return `⚠️ Invalid selection. Please enter a number between 1 and ${years.length}, or type "back" to go back.`;
-    }
-
-    const selectedYear = years[selection - 1];
-    const documents = await documentRepository.findByYearId(selectedYear.id);
-
-    if (documents.length === 0) {
-      return `📁 *No Documents in ${selectedYear.year}*\n\nNo documents have been uploaded for this year yet.\n\nType "back" to select a different year.`;
-    }
-
-    await this.updateSession(mobile, {
-      state: 'SELECTING_FILE',
-      selectedYear: selectedYear.year,
-      yearId: selectedYear.id,
+    const subfolders = await folderRepository.findByParentId(currentFolder.id);
+    subfolders.sort((a, b) => {
+      const aIsYear = /^\d{4}$/.test(a.name);
+      const bIsYear = /^\d{4}$/.test(b.name);
+      if (aIsYear && bIsYear) return b.name.localeCompare(a.name);
+      return a.name.localeCompare(b.name);
     });
 
-    let fileList = `📄 *Documents for ${selectedYear.year}*\n\n`;
-    documents.forEach((doc, index) => {
-      const sizeKB = Math.round(doc.size / 1024);
-      fileList += `${index + 1}. ${doc.originalName} (${sizeKB}KB)\n`;
-    });
-    fileList += `\n📝 Reply with the file number to receive it.`;
-    fileList += `\n↩️ Type "back" to select a different year.`;
+    const files = (currentFolder as any).files || currentFolder.get('files') || [];
+    files.sort((a: any, b: any) => (a.originalName || a.fileName).localeCompare(b.originalName || b.fileName));
 
-    return fileList;
-  },
+    const items = [
+      ...subfolders.map(f => ({ type: 'folder' as const, id: f.id })),
+      ...files.map((f: any) => ({ type: 'file' as const, id: f.id, originalName: f.originalName, fileName: f.fileName, s3Path: f.s3Path }))
+    ];
 
-  /**
-   * Handle file selection
-   */
-  async handleFileSelection(mobile: string, message: string, session: WhatsAppSession): Promise<string> {
-    if (message === 'back' || message === 'b') {
-      await this.updateSession(mobile, { state: 'AUTHENTICATED' });
-      const years = await yearRepository.findByClientId(session.clientId!);
-
-      let yearList = `📅 *Select Year*\n\n`;
-      years.forEach((year, index) => {
-        yearList += `${index + 1}. ${year.year}\n`;
-      });
-      yearList += `\n📝 Reply with the year number.`;
-
-      await this.updateSession(mobile, { state: 'SELECTING_YEAR' });
-      return yearList;
-    }
-
-    const documents = await documentRepository.findByYearId(session.yearId!);
     const selection = parseInt(message, 10);
-
-    if (isNaN(selection) || selection < 1 || selection > documents.length) {
-      return `⚠️ Invalid selection. Please enter a number between 1 and ${documents.length}, or type "back" to go back.`;
+    if (isNaN(selection) || selection < 1 || selection > items.length) {
+      return `⚠️ Invalid selection. Please enter a number between 1 and ${items.length}, or type "back" to go up.`;
     }
 
-    const selectedDoc = documents[selection - 1];
+    const selectedItem = items[selection - 1];
 
-    try {
-      // Generate signed URL
-      const signedUrl = await s3Helpers.getSignedDownloadUrl(selectedDoc.s3Path);
+    if (selectedItem.type === 'folder') {
+      return await this.listFolderContents(mobile, selectedItem.id, session);
+    } else {
+      // File download logic
+      try {
+        const signedUrl = await s3Helpers.getSignedDownloadUrl(selectedItem.s3Path!);
+        const docName = selectedItem.originalName || selectedItem.fileName;
 
-      // In production, we could send the document directly if it's small enough or supported type
-      // Meta supports sending media via ID or Link (link must be public/downloadable)
-      // For now, we return the text link
-      return `📎 *${selectedDoc.originalName}*\n\n🔗 Download Link (expires in 5 minutes):\n${signedUrl}\n\n📝 Type "back" to select another file or "menu" for main menu.`;
-    } catch (error) {
-      logger.error(`Failed to generate download URL: ${(error as Error).message}`);
-      return `❌ Sorry, there was an error retrieving the document. Please try again later.`;
+        return `📎 *${docName}*\n\n🔗 Download Link (expires in 5 minutes):\n${signedUrl}\n\n📝 Type "back" to return to the folder or "menu" for main menu.`;
+      } catch (error) {
+        logger.error(`Failed to generate download URL: ${(error as Error).message}`);
+        return `❌ Error retrieving document. Please try again later.`;
+      }
     }
   },
 

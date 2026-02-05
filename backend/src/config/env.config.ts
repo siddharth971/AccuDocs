@@ -44,13 +44,7 @@ export const config = {
     signedUrlExpiry: parseInt(process.env.AWS_S3_SIGNED_URL_EXPIRY || '300', 10),
   },
 
-  meta: {
-    phoneNumberId: process.env.META_PHONE_NUMBER_ID || '',
-    accessToken: process.env.META_ACCESS_TOKEN || '',
-    businessAccountId: process.env.META_BUSINESS_ACCOUNT_ID || '',
-    webhookVerifyToken: process.env.META_WEBHOOK_VERIFY_TOKEN || '',
-    apiVersion: process.env.META_API_VERSION || 'v19.0',
-  },
+
 
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || '',

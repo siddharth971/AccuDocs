@@ -5,54 +5,6 @@ import { z } from 'zod';
 
 const router = Router();
 
-/**
- * @swagger
- * /whatsapp/webhook:
- *   get:
- *     summary: Webhook verification
- *     tags: [WhatsApp]
- *     parameters:
- *       - in: query
- *         name: hub.mode
- *         schema:
- *           type: string
- *       - in: query
- *         name: hub.verify_token
- *         schema:
- *           type: string
- *       - in: query
- *         name: hub.challenge
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Webhook verified
- */
-router.get('/webhook', whatsappController.verifyWebhook);
-
-/**
- * @swagger
- * /whatsapp/webhook:
- *   post:
- *     summary: Handle incoming WhatsApp messages
- *     tags: [WhatsApp]
- *     requestBody:
- *       content:
- *         application/x-www-form-urlencoded:
- *           schema:
- *             type: object
- *             properties:
- *               From:
- *                 type: string
- *               Body:
- *                 type: string
- *               MessageSid:
- *                 type: string
- *     responses:
- *       200:
- *         description: Message processed
- */
-router.post('/webhook', whatsappController.handleWebhook);
 
 // Admin-only routes below
 router.use(authenticate, adminOnly);
