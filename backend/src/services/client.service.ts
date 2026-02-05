@@ -44,13 +44,10 @@ export const clientService = {
     adminId: string,
     ip?: string
   ): Promise<ClientWithUser> {
-    // Check if mobile already exists
-    const existingUser = await userRepository.findByMobile(data.mobile);
-    if (existingUser) {
-      throw new ConflictError('A user with this mobile number already exists');
-    }
+    // Note: Multiple clients can share the same mobile number
+    // Each client will have their own user account with the same mobile
 
-    // Check if code already exists
+    // Check if code already exists (codes must still be unique)
     const existingClient = await clientRepository.existsByCode(data.code);
     if (existingClient) {
       throw new ConflictError('A client with this code already exists');
@@ -121,13 +118,7 @@ export const clientService = {
       throw new NotFoundError('Client not found');
     }
 
-    // Check if new mobile conflicts
-    if (data.mobile) {
-      const existingUser = await userRepository.existsByMobile(data.mobile, client.userId);
-      if (existingUser) {
-        throw new ConflictError('A user with this mobile number already exists');
-      }
-    }
+    // Note: Multiple clients can share the same mobile number, so no conflict check needed for mobile
 
     // Check if new code conflicts
     if (data.code) {

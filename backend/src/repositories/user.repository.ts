@@ -23,6 +23,10 @@ export const userRepository = {
     return User.findOne({ where: { mobile } });
   },
 
+  async findAllByMobile(mobile: string): Promise<User[]> {
+    return User.findAll({ where: { mobile, isActive: true } });
+  },
+
   async create(data: UserCreationAttributes, options?: any): Promise<User> {
     return User.create(data, options) as unknown as Promise<User>;
   },

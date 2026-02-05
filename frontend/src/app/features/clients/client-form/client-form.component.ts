@@ -142,7 +142,7 @@ import { NotificationService } from '@core/services/notification.service';
                   <div class="input-focus-border"></div>
                 </div>
                 <div class="flex items-center justify-between max-w-lg px-1">
-                  <p class="text-[11px] text-slate-400 font-medium italic">Format: [10 Digits Mobile Number]</p>
+                  <p class="text-[11px] text-slate-400 font-medium italic">Same number can be linked to multiple clients for WhatsApp access</p>
                   @if (clientForm.get('mobile')?.touched && clientForm.get('mobile')?.invalid) {
                     <p class="text-xs text-danger-500 font-bold flex items-center gap-1.5 animate-slide-up">
                       <mat-icon class="text-[16px] w-[16px] h-[16px]">warning</mat-icon> Valid number required

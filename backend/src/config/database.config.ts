@@ -42,6 +42,17 @@ export const connectDatabase = async (): Promise<void> => {
     logger.info('✅ Database connection established successfully');
 
     if (config.nodeEnv === 'development') {
+      // For SQLite: Drop unique index on mobile to allow multiple clients with same number
+      if (dialect === 'sqlite') {
+        try {
+          await sequelize.query('DROP INDEX IF EXISTS users_mobile');
+          await sequelize.query('DROP INDEX IF EXISTS users_mobile_unique');
+          logger.info('✅ Dropped unique mobile index (if existed)');
+        } catch (e) {
+          // Index might not exist, ignore
+        }
+      }
+
       await sequelize.sync();
       logger.info('✅ Database synchronized');
     }

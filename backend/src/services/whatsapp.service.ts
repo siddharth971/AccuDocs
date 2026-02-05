@@ -13,8 +13,15 @@ import { s3Helpers } from '../config/s3.config';
 export type SessionState =
   | 'INITIAL'
   | 'AWAITING_OTP'
+  | 'AWAITING_CLIENT_SELECTION'
   | 'AUTHENTICATED'
   | 'EXPLORING_FOLDER';
+
+export interface MatchingClient {
+  id: string;
+  code: string;
+  name: string;
+}
 
 export interface WhatsAppSession {
   state: SessionState;
@@ -22,6 +29,7 @@ export interface WhatsAppSession {
   clientId?: string;
   clientCode?: string;
   currentFolderId?: string;
+  matchingClients?: MatchingClient[];
   lastActivity: number;
 }
 
@@ -183,6 +191,10 @@ export const whatsappService = {
         response = await this.handleOTPState(mobile, msg.body, session);
         break;
 
+      case 'AWAITING_CLIENT_SELECTION':
+        response = await this.handleClientSelection(mobile, message, session);
+        break;
+
       case 'AUTHENTICATED':
         response = await this.handleAuthenticatedState(mobile, message, session);
         break;
@@ -205,35 +217,142 @@ export const whatsappService = {
     const greetings = ['hi', 'hello', 'hey', 'start', 'help', 'menu'];
 
     if (greetings.some(g => message.includes(g)) || message === 'start_btn') {
-      // Check if user exists via UserRepository for precise mobile matching
+      // Check if users exist via UserRepository - now find ALL users with this mobile
       const formattedMobile = mobile.startsWith('91') ? `+${mobile}` : mobile;
-      let user = await userRepository.findByMobile(formattedMobile);
+      const users = await userRepository.findAllByMobile(formattedMobile);
 
-      let finalClient = null;
-      if (user) {
-        finalClient = await clientRepository.findByUserId(user.id);
+      if (users.length === 0) {
+        return `❌ *Access Denied*\n\nYour mobile number (${mobile}) is not registered with AccuDocs.\n\nPlease contact your accountant to get registered.`;
       }
 
-      if (finalClient) {
-        // SKIP OTP Authentication as requested
+      // Get all clients for these users
+      const userIds = users.map(u => u.id);
+      const clients = await clientRepository.findAllByUserIds(userIds);
+
+      if (clients.length === 0) {
+        return `❌ *Access Denied*\n\nNo client accounts found for your mobile number.\n\nPlease contact your accountant.`;
+      }
+
+      // If only one client, authenticate directly
+      if (clients.length === 1) {
+        const client = clients[0];
         await this.updateSession(mobile, {
           state: 'AUTHENTICATED',
-          clientId: finalClient.id,
-          clientCode: finalClient.code,
+          clientId: client.id,
+          clientCode: client.code,
         });
 
         return await this.showMainMenu(mobile, {
           state: 'AUTHENTICATED',
-          clientId: finalClient.id,
-          clientCode: finalClient.code,
+          clientId: client.id,
+          clientCode: client.code,
           lastActivity: Date.now()
         });
-      } else {
-        return `❌ *Access Denied*\n\nYour mobile number (${mobile}) is not registered with AccuDocs.\n\nPlease contact your accountant to get registered.`;
       }
+
+      // Multiple clients found - show selection menu
+      const matchingClients: MatchingClient[] = clients.map(c => ({
+        id: c.id,
+        code: c.code,
+        name: (c as any).user?.name || c.code
+      }));
+
+      await this.updateSession(mobile, {
+        state: 'AWAITING_CLIENT_SELECTION',
+        matchingClients: matchingClients
+      });
+
+      return this.showClientSelectionMenu(matchingClients);
     }
 
     return this.sendWelcomeMessage();
+  },
+
+  /**
+   * Show client selection menu when multiple clients have the same number
+   */
+  showClientSelectionMenu(clients: MatchingClient[]): string {
+    let menuText = `┏━━━━━━━━━━━━━━━━━━━━━┓\n`;
+    menuText += `┃  👥 *SELECT CLIENT*     \n`;
+    menuText += `┃  _Multiple accounts found_\n`;
+    menuText += `┗━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+    menuText += `We found multiple accounts linked to your number.\n`;
+    menuText += `Please select which account you want to access:\n\n`;
+    menuText += `┌──────────────────────┐\n`;
+
+    clients.forEach((client, index) => {
+      menuText += `│  *${index + 1}* ▸ 👤 ${client.name}\n`;
+      menuText += `│       _(Code: ${client.code})_\n`;
+    });
+
+    menuText += `└──────────────────────┘\n\n`;
+    menuText += `_Reply with a number (1-${clients.length}) to select_`;
+
+    return menuText;
+  },
+
+  /**
+   * Handle client selection when multiple clients have the same number
+   */
+  async handleClientSelection(mobile: string, message: string, session: WhatsAppSession): Promise<any> {
+    const matchingClients = session.matchingClients || [];
+
+    if (matchingClients.length === 0) {
+      // No clients in session, restart
+      await this.clearSession(mobile);
+      return this.sendWelcomeMessage();
+    }
+
+    // Handle "back" or restart
+    if (message === 'back' || message === 'restart' || message === 'hi') {
+      await this.clearSession(mobile);
+      return this.sendWelcomeMessage();
+    }
+
+    // Handle client selection by ID (e.g., client_uuid)
+    if (message.startsWith('client_')) {
+      const clientId = message.replace('client_', '');
+      const selectedClient = matchingClients.find(c => c.id === clientId);
+      if (selectedClient) {
+        await this.updateSession(mobile, {
+          state: 'AUTHENTICATED',
+          clientId: selectedClient.id,
+          clientCode: selectedClient.code,
+          matchingClients: undefined
+        });
+
+        return await this.showMainMenu(mobile, {
+          state: 'AUTHENTICATED',
+          clientId: selectedClient.id,
+          clientCode: selectedClient.code,
+          lastActivity: Date.now()
+        });
+      }
+    }
+
+    // Handle numeric selection
+    const selection = parseInt(message, 10);
+    if (!isNaN(selection) && selection >= 1 && selection <= matchingClients.length) {
+      const selectedClient = matchingClients[selection - 1];
+
+      await this.updateSession(mobile, {
+        state: 'AUTHENTICATED',
+        clientId: selectedClient.id,
+        clientCode: selectedClient.code,
+        matchingClients: undefined
+      });
+
+      return await this.showMainMenu(mobile, {
+        state: 'AUTHENTICATED',
+        clientId: selectedClient.id,
+        clientCode: selectedClient.code,
+        lastActivity: Date.now()
+      });
+    }
+
+    // Invalid selection
+    return `⚠️ Invalid selection. Please enter a number between 1 and ${matchingClients.length}.\n\n` +
+      this.showClientSelectionMenu(matchingClients);
   },
 
   /**

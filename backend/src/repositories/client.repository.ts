@@ -42,6 +42,16 @@ export const clientRepository = {
     });
   },
 
+  async findAllByUserIds(userIds: string[]): Promise<Client[]> {
+    return Client.findAll({
+      where: { userId: { [Op.in]: userIds } },
+      include: [
+        { model: User, as: 'user', attributes: ['id', 'name', 'mobile', 'isActive'] },
+        { model: Year, as: 'years' },
+      ],
+    });
+  },
+
   async create(data: ClientCreationAttributes, options?: any): Promise<Client> {
     return Client.create(data, options) as unknown as Promise<Client>;
   },

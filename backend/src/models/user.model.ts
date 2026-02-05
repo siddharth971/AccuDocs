@@ -54,7 +54,7 @@ User.init(
     mobile: {
       type: DataTypes.STRING(20),
       allowNull: false,
-      unique: true,
+      // unique: false - Multiple clients can share same mobile number
     },
     password: {
       type: DataTypes.STRING(255),
@@ -80,7 +80,7 @@ User.init(
     tableName: 'users',
     timestamps: true,
     indexes: [
-      { fields: ['mobile'], unique: true },
+      { fields: ['mobile'] }, // Not unique - multiple clients can share same mobile
       { fields: ['role'] },
       { fields: ['is_active'] },
     ],
