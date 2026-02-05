@@ -64,10 +64,10 @@ export const whatsappService = {
         if (msg.from.includes('@g.us')) return; // Ignore group messages
 
         // Process message and get response
-        const response = await this.processMessage(msg.from, msg.body);
+        const response = await this.processMessage(msg);
 
         if (response) {
-          await msg.reply(response);
+          await client.sendMessage(msg.from, response);
           logger.info(`Replied to ${msg.from}`);
         }
       } catch (err) {
@@ -146,9 +146,21 @@ export const whatsappService = {
   /**
    * Process incoming WhatsApp message
    */
-  async processMessage(from: string, body: string): Promise<string> {
+  async processMessage(msg: any): Promise<any> {
+    const from = msg.from;
     const mobile = from.replace(/\D/g, ''); // Clean number
-    const message = body.trim().toLowerCase();
+
+    let message = msg.body.trim().toLowerCase();
+
+    // Handle Button clicks
+    if (msg.type === 'buttons_response' && msg.selectedButtonId) {
+      message = msg.selectedButtonId.toLowerCase();
+    }
+
+    // Handle List selections
+    if (msg.type === 'list_response' && msg.selectedRowId) {
+      message = msg.selectedRowId.toLowerCase();
+    }
 
     let session = await this.getSession(mobile);
 
@@ -160,7 +172,7 @@ export const whatsappService = {
       };
     }
 
-    let response: string;
+    let response: any;
 
     switch (session.state) {
       case 'INITIAL':
@@ -168,7 +180,7 @@ export const whatsappService = {
         break;
 
       case 'AWAITING_OTP':
-        response = await this.handleOTPState(mobile, body, session);
+        response = await this.handleOTPState(mobile, msg.body, session);
         break;
 
       case 'AUTHENTICATED':
@@ -189,21 +201,13 @@ export const whatsappService = {
   /**
    * Handle initial state - user says hi
    */
-  async handleInitialState(mobile: string, message: string, session: WhatsAppSession): Promise<string> {
+  async handleInitialState(mobile: string, message: string, session: WhatsAppSession): Promise<any> {
     const greetings = ['hi', 'hello', 'hey', 'start', 'help', 'menu'];
 
-    if (greetings.some(g => message.includes(g))) {
-      // Check if user exists
+    if (greetings.some(g => message.includes(g)) || message === 'start_btn') {
       // Check if user exists via UserRepository for precise mobile matching
-      // Store formatted number for search
       const formattedMobile = mobile.startsWith('91') ? `+${mobile}` : mobile;
-
-      // Try with + prefix first (standard format)
       let user = await userRepository.findByMobile(formattedMobile);
-
-      // If not found and input didn't have +, try bare number? 
-      // (The above logic handles adding +, but if DB has '9188...' without +, we might need to check that)
-      // Actually usually we store with +.
 
       let finalClient = null;
       if (user) {
@@ -256,12 +260,12 @@ export const whatsappService = {
   /**
    * Handle authenticated state
    */
-  async handleAuthenticatedState(mobile: string, message: string, session: WhatsAppSession): Promise<string> {
-    if (message === 'menu' || message === 'm') {
+  async handleAuthenticatedState(mobile: string, message: string, session: WhatsAppSession): Promise<any> {
+    if (message === 'menu' || message === 'm' || message === 'main_menu') {
       return await this.showMainMenu(mobile, session);
     }
 
-    if (message === 'documents' || message === 'd' || message === '1') {
+    if (message === 'documents' || message === 'd' || message === '1' || message === 'view_docs') {
       const rootFolder = await folderRepository.findRootByClientId(session.clientId!);
       if (!rootFolder) {
         return `📁 *No Documents Available*\n\nYour account has no folders. Please contact your accountant.`;
@@ -269,7 +273,7 @@ export const whatsappService = {
       return await this.listFolderContents(mobile, rootFolder.id, session);
     }
 
-    if (message === 'logout' || message === 'exit' || message === '0') {
+    if (message === 'logout' || message === 'exit' || message === '0' || message === 'logout_btn') {
       await this.clearSession(mobile);
       return `👋 *Goodbye!*\n\nYou have been logged out.\n\nSend "Hi" to start a new session.`;
     }
@@ -280,60 +284,78 @@ export const whatsappService = {
   /**
    * List folder contents and update session
    */
-  async listFolderContents(mobile: string, folderId: string, session: WhatsAppSession): Promise<string> {
+  async listFolderContents(mobile: string, folderId: string, session: WhatsAppSession): Promise<any> {
     const folder = await folderRepository.findById(folderId);
     if (!folder) return `❌ Folder not found.`;
 
     const subfolders = await folderRepository.findByParentId(folderId);
-    // Sort: Years descending, others alphabetical
     subfolders.sort((a, b) => {
       const aIsYear = /^\d{4}$/.test(a.name);
       const bIsYear = /^\d{4}$/.test(b.name);
-      if (aIsYear && bIsYear) return b.name.localeCompare(a.name); // 2026 before 2025
+      if (aIsYear && bIsYear) return b.name.localeCompare(a.name);
       return a.name.localeCompare(b.name);
     });
 
     const files = (folder as any).files || folder.get('files') || [];
-    logger.debug(`Folder ${folder.name} (${folderId}) contents: ${subfolders.length} subfolders, ${files.length} files`);
-
     files.sort((a: any, b: any) => (a.originalName || a.fileName).localeCompare(b.originalName || b.fileName));
 
     const totalItems = subfolders.length + files.length;
     if (totalItems === 0) {
-      // If root is empty
       if (!folder.parentId) {
         return `📁 *No Documents Available*\n\nNo folders or files have been created yet.`;
       }
-      return `📁 *${folder.name}*\n\nThis folder is empty.\n\n↩️ Type "back" to go up or "menu" for main menu.`;
+      return `📁 *${folder.name}*\n\nThis folder is empty.\n\nType "back" to go up or "menu" for main menu.`;
     }
 
-    let response = `📁 *${folder.name}*\n\n`;
-    let count = 1;
+    let menuText = `┌─────────────────────┐\n`;
+    menuText += `│  📁 *${folder.name}*\n`;
+    menuText += `└─────────────────────┘\n\n`;
 
-    subfolders.forEach((sub) => {
-      response += `${count++}. 📁 ${sub.name}\n`;
-    });
+    let itemNumber = 1;
 
-    files.forEach((file: any) => {
-      const sizeKB = Math.round(file.size / 1024);
-      response += `${count++}. 📄 ${file.originalName || file.fileName} (${sizeKB}KB)\n`;
-    });
+    if (subfolders.length > 0) {
+      menuText += `📂 *FOLDERS*\n`;
+      menuText += `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n`;
+      subfolders.forEach(sub => {
+        menuText += `  *${itemNumber}* ▸ 📁 ${sub.name}\n`;
+        itemNumber++;
+      });
+      menuText += `\n`;
+    }
 
-    response += `\n📝 Reply with the item number.\n↩️ Type "back" to go up.`;
+    if (files.length > 0) {
+      menuText += `📄 *FILES*\n`;
+      menuText += `┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄\n`;
+      files.forEach((file: any) => {
+        const fileName = file.originalName || file.fileName;
+        const fileSize = Math.round(file.size / 1024);
+        menuText += `  *${itemNumber}* ▸ 📄 ${fileName}\n`;
+        menuText += `       _(${fileSize} KB)_\n`;
+        itemNumber++;
+      });
+      menuText += `\n`;
+    }
+
+    menuText += `━━━━━━━━━━━━━━━━━━━━\n`;
+    menuText += `💡 *Quick Actions:*\n`;
+    menuText += `  *B* ◂ Go Back\n`;
+    menuText += `  *M* ◂ Main Menu\n`;
+    menuText += `━━━━━━━━━━━━━━━━━━━━\n`;
+    menuText += `_Reply with a number to select_`;
 
     await this.updateSession(mobile, {
       state: 'EXPLORING_FOLDER',
       currentFolderId: folderId
     });
 
-    return response;
+    return menuText;
   },
 
   /**
    * Handle dynamic folder exploration (multi-level)
    */
-  async handleFolderExploration(mobile: string, message: string, session: WhatsAppSession): Promise<string> {
-    if (message === 'back' || message === 'b') {
+  async handleFolderExploration(mobile: string, message: string, session: WhatsAppSession): Promise<any> {
+    if (message === 'back' || message === 'b' || message === 'back_btn') {
       const currentFolder = await folderRepository.findById(session.currentFolderId!);
       if (!currentFolder || !currentFolder.parentId) {
         await this.updateSession(mobile, { state: 'AUTHENTICATED' });
@@ -342,7 +364,7 @@ export const whatsappService = {
       return await this.listFolderContents(mobile, currentFolder.parentId, session);
     }
 
-    if (message === 'menu' || message === 'm') {
+    if (message === 'menu' || message === 'm' || message === 'main_menu') {
       await this.updateSession(mobile, { state: 'AUTHENTICATED' });
       return await this.showMainMenu(mobile, session);
     }
@@ -350,6 +372,23 @@ export const whatsappService = {
     const currentFolder = await folderRepository.findById(session.currentFolderId!);
     if (!currentFolder) return `❌ Session error. Type "menu" to restart.`;
 
+    // Handle interactive selection IDs
+    if (message.startsWith('folder_')) {
+      const folderId = message.replace('folder_', '');
+      return await this.listFolderContents(mobile, folderId, session);
+    }
+
+    if (message.startsWith('file_')) {
+      const fileId = message.replace('file_', '');
+      const files = (currentFolder as any).files || currentFolder.get('files') || [];
+      const selectedFile = files.find((f: any) => f.id === fileId || f.id === parseInt(fileId));
+
+      if (selectedFile) {
+        return await this.deliverFile(mobile, selectedFile);
+      }
+    }
+
+    // Fallback to numeric selection for backward compatibility
     const subfolders = await folderRepository.findByParentId(currentFolder.id);
     subfolders.sort((a, b) => {
       const aIsYear = /^\d{4}$/.test(a.name);
@@ -367,37 +406,42 @@ export const whatsappService = {
     ];
 
     const selection = parseInt(message, 10);
-    if (isNaN(selection) || selection < 1 || selection > items.length) {
-      return `⚠️ Invalid selection. Please enter a number between 1 and ${items.length}, or type "back" to go up.`;
+    if (!isNaN(selection) && selection >= 1 && selection <= items.length) {
+      const selectedItem = items[selection - 1];
+      if (selectedItem.type === 'folder') {
+        return await this.listFolderContents(mobile, selectedItem.id, session);
+      } else {
+        return await this.deliverFile(mobile, selectedItem);
+      }
     }
 
-    const selectedItem = items[selection - 1];
+    return `⚠️ Invalid selection. Please select an item from the list, or type "back" to go up.`;
+  },
 
-    if (selectedItem.type === 'folder') {
-      return await this.listFolderContents(mobile, selectedItem.id, session);
-    } else {
-      // File download logic (Direct delivery)
-      try {
-        const signedUrl = await s3Helpers.getSignedDownloadUrl(selectedItem.s3Path!);
-        const docName = selectedItem.originalName || selectedItem.fileName;
+  /**
+   * Deliver file directly to user
+   */
+  async deliverFile(mobile: string, file: any): Promise<string> {
+    try {
+      const signedUrl = await s3Helpers.getSignedDownloadUrl(file.s3Path!);
+      const docName = file.originalName || file.fileName;
 
-        // Fetch the file as a buffer
-        const response = await axios.get(signedUrl, { responseType: 'arraybuffer' });
-        const media = new MessageMedia(
-          response.headers['content-type'],
-          Buffer.from(response.data).toString('base64'),
-          docName
-        );
+      // Fetch the file as a buffer
+      const response = await axios.get(signedUrl, { responseType: 'arraybuffer' });
+      const media = new MessageMedia(
+        response.headers['content-type'],
+        Buffer.from(response.data).toString('base64'),
+        docName
+      );
 
-        // Send the file directly
-        const chatId = mobile.includes('@') ? mobile : `${mobile.replace(/\D/g, '')}@c.us`;
-        await client.sendMessage(chatId, media);
+      // Send the file directly
+      const chatId = mobile.includes('@') ? mobile : `${mobile.replace(/\D/g, '')}@c.us`;
+      await client.sendMessage(chatId, media);
 
-        return `✅ *${docName}* sent directly below.\n\n📝 Type "back" to return to the folder or "menu" for main menu.`;
-      } catch (error) {
-        logger.error(`Failed to send direct media: ${(error as Error).message}`);
-        return `❌ Error retrieving document. Please try again later.`;
-      }
+      return `✅ *${docName}* sent directly below.\n\n📝 Select another item or type "back" to return.`;
+    } catch (error) {
+      logger.error(`Failed to send direct media: ${(error as Error).message}`);
+      return `❌ Error retrieving document. Please try again later.`;
     }
   },
 
@@ -405,13 +449,31 @@ export const whatsappService = {
    * Show main menu
    */
   async showMainMenu(mobile: string, session: WhatsAppSession): Promise<string> {
-    return `📋 *AccuDocs Menu*\n\nClient: ${session.clientCode || 'N/A'}\n\n1️⃣ View Documents\n0️⃣ Logout\n\n📝 Reply with the option number.`;
+    return `┏━━━━━━━━━━━━━━━━━━━━━┓\n` +
+      `┃  🏠 *ACCUDOCS*          \n` +
+      `┃  _Main Menu_            \n` +
+      `┗━━━━━━━━━━━━━━━━━━━━━┛\n\n` +
+      `👤 Client: *${session.clientCode || 'N/A'}*\n\n` +
+      `Welcome back! Choose an option:\n\n` +
+      `┌──────────────────────┐\n` +
+      `│  *1* ▸ 📁 My Documents\n` +
+      `│  *0* ▸ 🚪 Logout\n` +
+      `└──────────────────────┘\n\n` +
+      `_Reply *1* or *0* to continue_`;
   },
 
   /**
    * Send welcome message
    */
   sendWelcomeMessage(): string {
-    return `👋 *Welcome to AccuDocs!*\n\n📄 Access your tax and finance documents securely.\n\n💬 Send "Hi" to get started.`;
+    return `┏━━━━━━━━━━━━━━━━━━━━━┓\n` +
+      `┃  📄 *ACCUDOCS*          \n` +
+      `┃  _Your Digital Vault_   \n` +
+      `┗━━━━━━━━━━━━━━━━━━━━━┛\n\n` +
+      `Access your tax & finance documents\n` +
+      `securely via WhatsApp.\n\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `💬 Type *Hi* to get started\n` +
+      `━━━━━━━━━━━━━━━━━━━━`;
   },
 };
