@@ -1,3 +1,5 @@
+import 'reflect-metadata';
+import './main/container';
 import { createApp } from './app';
 import { config, validateConfig, connectDatabase, connectRedis, disconnectDatabase, disconnectRedis } from './config';
 import { initializeAssociations } from './models';
