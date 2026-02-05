@@ -47,6 +47,8 @@ import { VIEW_MODES, ViewMode } from '../../models/file-explorer.models';
 export class FileViewToolbarComponent {
   // Inputs
   canGoBack = input<boolean>(false);
+  showUpload = input<boolean>(true);
+  showNewFolder = input<boolean>(true);
 
   // Outputs
   refreshClicked = output<void>();

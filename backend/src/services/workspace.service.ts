@@ -717,4 +717,57 @@ export const workspaceService = {
       files: formattedFiles,
     };
   },
+
+  /**
+   * Get all files with client information (for admin file manager overview)
+   */
+  async getAllFilesWithClientInfo(
+    filters: {
+      search?: string;
+      clientId?: string;
+      mimeType?: string;
+    } = {},
+    pagination: {
+      page: number;
+      limit: number;
+      sortBy?: string;
+      sortOrder?: 'asc' | 'desc';
+    } = { page: 1, limit: 20 }
+  ): Promise<{ files: any[]; total: number }> {
+    const { files, total } = await fileRepository.findAllWithClientInfo(filters, pagination);
+
+    // Format the response with client info
+    const formattedFiles = files.map((file: any) => {
+      const folder = file.folder || {};
+      const client = folder.client || {};
+      const user = client.user || {};
+
+      return {
+        id: file.id,
+        fileName: file.fileName,
+        originalName: file.originalName,
+        mimeType: file.mimeType,
+        size: file.size,
+        s3Path: file.s3Path,
+        createdAt: file.createdAt,
+        updatedAt: file.updatedAt,
+        uploadedBy: {
+          id: file.uploader?.id || '',
+          name: file.uploader?.name || 'Unknown',
+        },
+        folder: {
+          id: folder.id,
+          name: folder.name,
+          type: folder.type,
+        },
+        client: {
+          id: client.id,
+          code: client.code,
+          name: user.name || '',
+        },
+      };
+    });
+
+    return { files: formattedFiles, total };
+  },
 };

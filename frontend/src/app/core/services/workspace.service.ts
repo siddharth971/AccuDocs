@@ -60,10 +60,47 @@ export interface UploadResult {
   downloadUrl: string;
 }
 
+export interface FileWithClientInfo {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  s3Path: string;
+  createdAt: string;
+  updatedAt: string;
+  uploadedBy: {
+    id: string;
+    name: string;
+  };
+  folder: {
+    id: string;
+    name: string;
+    type: string;
+  };
+  client: {
+    id: string;
+    code: string;
+    name: string;
+  };
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;
   data: T;
+}
+
+export interface PaginatedApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 @Injectable({
@@ -72,6 +109,30 @@ export interface ApiResponse<T> {
 export class WorkspaceService {
   private http = inject(HttpClient);
   private baseUrl = `${environment.apiUrl}/workspace`;
+
+  /**
+   * Get all files across all clients (admin file manager)
+   */
+  getAllFiles(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    clientId?: string;
+    mimeType?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}): Observable<PaginatedApiResponse<FileWithClientInfo>> {
+    let httpParams = new HttpParams();
+    if (params.page) httpParams = httpParams.set('page', params.page.toString());
+    if (params.limit) httpParams = httpParams.set('limit', params.limit.toString());
+    if (params.search) httpParams = httpParams.set('search', params.search);
+    if (params.clientId) httpParams = httpParams.set('clientId', params.clientId);
+    if (params.mimeType) httpParams = httpParams.set('mimeType', params.mimeType);
+    if (params.sortBy) httpParams = httpParams.set('sortBy', params.sortBy);
+    if (params.sortOrder) httpParams = httpParams.set('sortOrder', params.sortOrder);
+
+    return this.http.get<PaginatedApiResponse<FileWithClientInfo>>(`${this.baseUrl}/files`, { params: httpParams });
+  }
 
   /**
    * Get client workspace tree

@@ -1,4 +1,4 @@
-import { File, FileCreationAttributes, Folder, User } from '../models';
+import { File, FileCreationAttributes, Folder, User, Client } from '../models';
 import { Op } from 'sequelize';
 
 interface FileFilters {
@@ -175,5 +175,73 @@ export const fileRepository = {
    */
   async rename(id: string, newOriginalName: string): Promise<void> {
     await File.update({ originalName: newOriginalName }, { where: { id } });
+  },
+
+  /**
+   * Find all files with client information (for file manager overview)
+   */
+  async findAllWithClientInfo(
+    filters: FileFilters & { clientId?: string } = {},
+    pagination: PaginationOptions = { page: 1, limit: 10 }
+  ): Promise<{ files: any[]; total: number }> {
+    const where: any = {};
+
+    if (filters.folderId) {
+      where.folderId = filters.folderId;
+    }
+
+    if (filters.search) {
+      where[Op.or] = [
+        { originalName: { [Op.like]: `%${filters.search}%` } },
+        { fileName: { [Op.like]: `%${filters.search}%` } },
+      ];
+    }
+
+    if (filters.mimeType) {
+      where.mimeType = { [Op.like]: `%${filters.mimeType}%` };
+    }
+
+    const { page, limit, sortBy = 'createdAt', sortOrder = 'desc' } = pagination;
+    const offset = (page - 1) * limit;
+
+    // Build folder where clause for client filtering
+    const folderWhere: any = {};
+    if (filters.clientId) {
+      folderWhere.clientId = filters.clientId;
+    }
+
+    const { rows: files, count: total } = await File.findAndCountAll({
+      where,
+      include: [
+        {
+          model: Folder,
+          as: 'folder',
+          where: Object.keys(folderWhere).length > 0 ? folderWhere : undefined,
+          include: [
+            {
+              model: Client,
+              as: 'client',
+              include: [
+                {
+                  model: User,
+                  as: 'user',
+                  attributes: ['id', 'name'],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: User,
+          as: 'uploader',
+          attributes: ['id', 'name'],
+        },
+      ],
+      order: [[sortBy, sortOrder.toUpperCase()]],
+      limit,
+      offset,
+    });
+
+    return { files, total };
   },
 };

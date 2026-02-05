@@ -299,4 +299,41 @@ export const workspaceController = {
       next(error);
     }
   },
+
+  /**
+   * Get all files across all clients (admin file manager)
+   */
+  async getAllFiles(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { page = 1, limit = 20, search, clientId, mimeType, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+
+      const result = await workspaceService.getAllFilesWithClientInfo(
+        {
+          search: search as string,
+          clientId: clientId as string,
+          mimeType: mimeType as string,
+        },
+        {
+          page: Number(page),
+          limit: Number(limit),
+          sortBy: sortBy as string,
+          sortOrder: sortOrder as 'asc' | 'desc',
+        }
+      );
+
+      res.json({
+        success: true,
+        message: 'Files retrieved successfully',
+        data: result.files,
+        meta: {
+          page: Number(page),
+          limit: Number(limit),
+          total: result.total,
+          totalPages: Math.ceil(result.total / Number(limit)),
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
 };

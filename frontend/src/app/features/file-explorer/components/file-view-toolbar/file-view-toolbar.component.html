@@ -60,13 +60,14 @@
     </app-button>
 
     <!-- New Folder Button -->
-    <app-button variant="secondary" size="sm" (clicked)="onNewFolder()" matTooltip="Create new folder">
+    <app-button *ngIf="showNewFolder()" variant="secondary" size="sm" (clicked)="onNewFolder()"
+      matTooltip="Create new folder">
       <ng-icon name="heroFolderPlusSolid" class="md:mr-2" size="16" icon-left></ng-icon>
       <span class="hidden md:inline">New Folder</span>
     </app-button>
 
     <!-- Upload Button -->
-    <app-button variant="primary" size="sm" (clicked)="onUpload()" matTooltip="Upload files">
+    <app-button *ngIf="showUpload()" variant="primary" size="sm" (clicked)="onUpload()" matTooltip="Upload files">
       <ng-icon name="heroArrowUpTraySolid" class="md:mr-2" size="16" icon-left></ng-icon>
       <span class="hidden md:inline">Upload</span>
     </app-button>

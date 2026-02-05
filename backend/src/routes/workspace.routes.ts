@@ -9,6 +9,41 @@ router.use(authenticate);
 
 /**
  * @swagger
+ * /workspace/files:
+ *   get:
+ *     summary: Get all files across all clients (admin file manager)
+ *     tags: [Workspace]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: clientId
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: mimeType
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of all files with client info
+ */
+router.get('/files', adminOnly, workspaceController.getAllFiles);
+
+/**
+ * @swagger
  * /workspace/clients/{clientId}:
  *   get:
  *     summary: Get client workspace (folder tree)
