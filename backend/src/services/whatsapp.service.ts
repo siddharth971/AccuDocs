@@ -1,5 +1,6 @@
 
-import { Client, LocalAuth } from 'whatsapp-web.js';
+import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
+import axios from 'axios';
 import * as qrcode from 'qrcode-terminal';
 import { config } from '../config';
 import { redisHelpers } from '../config';
@@ -375,14 +376,26 @@ export const whatsappService = {
     if (selectedItem.type === 'folder') {
       return await this.listFolderContents(mobile, selectedItem.id, session);
     } else {
-      // File download logic
+      // File download logic (Direct delivery)
       try {
         const signedUrl = await s3Helpers.getSignedDownloadUrl(selectedItem.s3Path!);
         const docName = selectedItem.originalName || selectedItem.fileName;
 
-        return `📎 *${docName}*\n\n🔗 Download Link (expires in 5 minutes):\n${signedUrl}\n\n📝 Type "back" to return to the folder or "menu" for main menu.`;
+        // Fetch the file as a buffer
+        const response = await axios.get(signedUrl, { responseType: 'arraybuffer' });
+        const media = new MessageMedia(
+          response.headers['content-type'],
+          Buffer.from(response.data).toString('base64'),
+          docName
+        );
+
+        // Send the file directly
+        const chatId = mobile.includes('@') ? mobile : `${mobile.replace(/\D/g, '')}@c.us`;
+        await client.sendMessage(chatId, media);
+
+        return `✅ *${docName}* sent directly below.\n\n📝 Type "back" to return to the folder or "menu" for main menu.`;
       } catch (error) {
-        logger.error(`Failed to generate download URL: ${(error as Error).message}`);
+        logger.error(`Failed to send direct media: ${(error as Error).message}`);
         return `❌ Error retrieving document. Please try again later.`;
       }
     }
