@@ -79,31 +79,35 @@ export const clientRepository = {
       ? [[pagination.sortBy, pagination.sortOrder || 'desc']]
       : [['createdAt', 'desc']];
 
-    const includeOptions: any = [
-      {
-        model: User,
-        as: 'user',
-        attributes: ['id', 'name', 'mobile', 'isActive'],
-        ...(filters.search && {
-          where: {
-            [Op.or]: [
-              { name: { [Op.like]: `%${filters.search}%` } },
-              { mobile: { [Op.like]: `%${filters.search}%` } },
-            ],
-          },
-        }),
-      },
-    ];
-
     if (filters.search) {
+      // 1. Find matching users first
+      const matchedUsers = await User.findAll({
+        attributes: ['id'],
+        where: {
+          [Op.or]: [
+            { name: { [Op.like]: `%${filters.search}%` } },
+            { mobile: { [Op.like]: `%${filters.search}%` } },
+          ],
+        },
+      });
+      const matchedUserIds = matchedUsers.map(u => u.id);
+
+      // 2. OR condition: (Code matches) OR (User matches)
       where[Op.or] = [
         { code: { [Op.like]: `%${filters.search}%` } },
+        { userId: { [Op.in]: matchedUserIds } }
       ];
     }
 
     const { rows: clients, count: total } = await Client.findAndCountAll({
       where,
-      include: includeOptions,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'mobile', 'isActive'],
+        },
+      ],
       offset,
       limit: pagination.limit,
       order,

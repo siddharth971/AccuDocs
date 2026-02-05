@@ -15,7 +15,7 @@ export class UserMapper {
       password: data.password,
       role: data.role,
       isActive: data.isActive,
-      lastLogin: data.lastLogin
+      lastLogin: data.lastLogin ? new Date(data.lastLogin) : undefined
     }, data.id);
 
     return userOrError.isSuccess ? userOrError.getValue() : null;

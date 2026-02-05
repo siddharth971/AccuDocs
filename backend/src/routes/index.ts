@@ -6,6 +6,7 @@ import logRoutes from './log.routes';
 import whatsappRoutes from './whatsapp.routes';
 import workspaceRoutes from './workspace.routes';
 import telegramRoutes from './telegram.routes';
+import moduleAuthRoutes from '../modules/auth/presentation/auth.routes';
 
 const router = Router();
 
@@ -21,6 +22,7 @@ router.get('/health', (req: Request, res: Response) => {
 
 // API routes
 router.use('/auth', authRoutes);
+router.use('/v2/auth', moduleAuthRoutes);
 router.use('/clients', clientRoutes);
 router.use('/documents', documentRoutes);
 router.use('/logs', logRoutes);

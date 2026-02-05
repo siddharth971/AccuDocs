@@ -61,7 +61,17 @@ export const updateClient = asyncHandler(async (req: Request, res: Response) => 
   const adminId = req.user!.userId;
   const ip = req.ip || req.socket.remoteAddress;
 
-  const client = await clientService.update(req.params.id, req.body, adminId, ip);
+  let clientId = req.params.id;
+
+  // Manual patch for frontend sending 'null' as ID
+  if (clientId === 'null' && req.body.code) {
+    const existing = await clientService.getByCode(req.body.code);
+    if (existing) {
+      clientId = existing.id;
+    }
+  }
+
+  const client = await clientService.update(clientId, req.body, adminId, ip);
   sendSuccess(res, client, 'Client updated successfully');
 });
 
