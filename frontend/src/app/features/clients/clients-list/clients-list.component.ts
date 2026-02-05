@@ -40,7 +40,7 @@ import {
     })
   ],
   template: `
-    <div class="h-full flex flex-col bg-white rounded-lg animate-in fade-in duration-500">
+    <div class="h-full flex flex-col bg-white dark:bg-slate-900 rounded-lg animate-in fade-in duration-500">
       <app-data-table 
         title="Clients"
         [tableData]="facade.clients()" 
@@ -58,12 +58,12 @@ import {
       >
         <!-- Filters Slot -->
         <div class="flex items-center gap-2" filters>
-          <select class="px-4 py-2 bg-gray-50 border-none rounded-full text-sm font-medium text-gray-600 outline-none hover:bg-gray-100 transition-colors cursor-pointer">
+          <select class="px-4 py-2 bg-gray-50 dark:bg-slate-800 border-none rounded-full text-sm font-medium text-gray-600 dark:text-slate-300 outline-none hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
             <option>All Category</option>
              <option>Retail</option>
              <option>Wholesale</option>
           </select>
-           <select class="px-4 py-2 bg-gray-50 border-none rounded-full text-sm font-medium text-gray-600 outline-none hover:bg-gray-100 transition-colors cursor-pointer">
+           <select class="px-4 py-2 bg-gray-50 dark:bg-slate-800 border-none rounded-full text-sm font-medium text-gray-600 dark:text-slate-300 outline-none hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
             <option>All Group</option>
           </select>
         </div>

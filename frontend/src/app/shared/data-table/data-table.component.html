@@ -1,6 +1,6 @@
-<div class="p-6 gap-[19px] rounded-lg w-full max-w-full bg-white shadow-sm font-poppins text-sm">
+<div class="p-6 gap-[19px] rounded-lg w-full max-w-full bg-white dark:bg-slate-900 shadow-sm dark:shadow-none font-poppins text-sm">
   <div class="w-full flex items-center mb-4">
-    <h2 class="text-[18px] font-medium text-black font-[Poppins] leading-none tracking-normal">
+    <h2 class="text-[18px] font-medium text-black dark:text-white font-[Poppins] leading-none tracking-normal">
       {{ title }}
     </h2>
   </div>
@@ -9,14 +9,14 @@
     <div class="flex flex-wrap items-center gap-4">
       <!-- Search Input -->
       <div class="relative w-fit">
-        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+        <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-slate-400">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
           </svg>
         </span>
         <input type="text" placeholder="Search" [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)"
-          class="pl-12 sub-text-std h-[42px] pr-4 py-2 border border-gray-300 rounded-full w-64 outline-none focus:ring-1 focus:ring-orange-500 transition-shadow" />
+          class="pl-12 sub-text-std h-[42px] pr-4 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 rounded-full w-64 outline-none focus:ring-1 focus:ring-orange-500 transition-shadow" />
       </div>
 
       <!-- Filters Slot -->
@@ -31,7 +31,7 @@
 
       <!-- Add Button -->
       <button *ngIf="canAdd" (click)="onAdd()"
-        class="flex items-center justify-center w-[40px] h-[40px] rounded-full bg-black text-white hover:bg-gray-800 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95"
+        class="flex items-center justify-center w-[40px] h-[40px] rounded-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-95"
         title="Add New">
         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -59,7 +59,7 @@
   <div *ngIf="showModal()"
     class="fixed inset-0 bg-slate-900/60 flex items-center justify-center z-modal-backdrop backdrop-blur-md animate-in fade-in duration-200">
     <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 animate-in zoom-in-95 duration-200"
+      class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 animate-in zoom-in-95 duration-200"
       (click)="$event.stopPropagation()">
       <ng-container *ngComponentOutlet="
             formComponent; 
@@ -80,7 +80,7 @@
         [sortable]="col.sortable !== false" [width]="col.width || 150">
 
         <ng-template let-column="column" ngx-datatable-header-template>
-          <span class="font-semibold text-gray-700">{{ col.name }}</span>
+          <span class="font-semibold text-gray-700 dark:text-slate-300">{{ col.name }}</span>
         </ng-template>
 
         <ng-template let-row="row" let-value="value" ngx-datatable-cell-template>
@@ -98,7 +98,7 @@
               <ng-container *ngTemplateOutlet="col.template; context: { $implicit: row }"></ng-container>
             </ng-container>
             <ng-template #textVal>
-              <span class="text-gray-600 truncate block" [title]="value">{{ value }}</span>
+              <span class="text-gray-600 dark:text-slate-300 truncate block" [title]="value">{{ value }}</span>
             </ng-template>
           </ng-template>
         </ng-template>
@@ -109,7 +109,7 @@
       <ngx-datatable-column name="Actions" [sortable]="false" [width]="120"
         *ngIf="actionsTemplate || canEdit || canDelete">
         <ng-template let-column="column" ngx-datatable-header-template>
-          <span class="font-semibold text-gray-700">Actions</span>
+          <span class="font-semibold text-gray-700 dark:text-slate-300">Actions</span>
         </ng-template>
         <ng-template let-row="row" ngx-datatable-cell-template>
           <div class="flex items-center justify-end gap-2">

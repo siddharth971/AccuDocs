@@ -68,11 +68,6 @@
         align-items: center;
       }
     }
-
-    // Zebra striping if needed (optional)
-    // .datatable-row-wrapper:nth-child(odd) .datatable-body-row {
-    //   background-color: #F9FAFB;
-    // }
   }
 
   .datatable-footer {
@@ -94,6 +89,136 @@
           background-color: #4F46E5;
           color: white;
           font-weight: bold;
+        }
+      }
+    }
+  }
+}
+
+/* Dark Mode Support */
+:host-context(.dark) {
+  .ngx-datatable.material {
+    background: #0f172a; // Slate-900
+
+    .datatable-header {
+      background-color: #1e293b; // Slate-800
+      border-bottom: 1px solid #334155; // Slate-700
+
+      .datatable-header-cell {
+        color: #cbd5e1; // Slate-300
+      }
+    }
+
+    .datatable-body {
+      .datatable-row-wrapper {
+        &:hover {
+          .datatable-body-row {
+            background-color: #1e293b !important; // Slate-800 hover
+          }
+        }
+      }
+
+      .datatable-body-row {
+        border-bottom: 1px solid #1e293b; // Slate-800  
+        background-color: #0f172a; // Slate-900
+
+        &.active {
+          background-color: #1e1b4b; // Indigo-950
+        }
+
+        .datatable-body-cell {
+          color: #e2e8f0; // Slate-200
+        }
+      }
+    }
+
+    .datatable-footer {
+      background: #0f172a; // Slate-900
+      border-top: 1px solid #334155; // Slate-700
+      color: #94a3b8; // Slate-400
+
+      .datatable-pager {
+        a {
+          color: #94a3b8; // Slate-400
+
+          &:hover {
+            background-color: #1e293b; // Slate-800
+            color: #e2e8f0; // Slate-200
+          }
+
+          &.active {
+            background-color: #4F46E5;
+            color: white;
+          }
+        }
+
+        li.disabled a {
+          color: #475569 !important; // Slate-600
+        }
+      }
+    }
+  }
+}
+
+/* Alternative: Using Tailwind dark class on html/body */
+.dark {
+  .ngx-datatable.material {
+    background: #0f172a; // Slate-900
+
+    .datatable-header {
+      background-color: #1e293b; // Slate-800
+      border-bottom: 1px solid #334155; // Slate-700
+
+      .datatable-header-cell {
+        color: #cbd5e1; // Slate-300
+      }
+    }
+
+    .datatable-body {
+      .datatable-row-wrapper {
+        &:hover {
+          .datatable-body-row {
+            background-color: #1e293b !important; // Slate-800 hover
+          }
+        }
+      }
+
+      .datatable-body-row {
+        border-bottom: 1px solid #1e293b; // Slate-800  
+        background-color: #0f172a; // Slate-900
+
+        &.active {
+          background-color: #1e1b4b; // Indigo-950
+        }
+
+        .datatable-body-cell {
+          color: #e2e8f0; // Slate-200
+        }
+      }
+    }
+
+    .datatable-footer {
+      background: #0f172a; // Slate-900
+      border-top: 1px solid #334155; // Slate-700
+      color: #94a3b8; // Slate-400
+
+      .datatable-pager {
+        a {
+          color: #94a3b8; // Slate-400
+
+          &:hover {
+            background-color: #1e293b; // Slate-800
+            color: #e2e8f0; // Slate-200
+          }
+
+          &.active {
+            background-color: #4F46E5;
+            color: white;
+          }
+        }
+
+        li.disabled a {
+          color: #475569 !important; // Slate-600
         }
       }
     }
