@@ -1,5 +1,5 @@
 export * as authController from './auth.controller';
-export * as clientController from './client.controller';
+
 export * as documentController from './document.controller';
 export * as logController from './log.controller';
 export * as whatsappController from './whatsapp.controller';

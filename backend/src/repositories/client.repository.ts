@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use IClientRepository from src/modules/client instead
+ */
 import { Client, ClientAttributes, ClientCreationAttributes, User, Year } from '../models';
 import { Op } from 'sequelize';
 

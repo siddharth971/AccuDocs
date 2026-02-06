@@ -33,13 +33,18 @@ export interface WhatsAppSession {
   lastActivity: number;
 }
 
-let client: Client;
+let client: Client | undefined;
 
 export const whatsappService = {
   /**
    * Initialize WhatsApp Client
    */
   initialize(): void {
+    if (client) {
+      logger.warn('WhatsApp Client already initialized, skipping re-initialization.');
+      return;
+    }
+
     logger.info('Initializing WhatsApp Client...');
 
     client = new Client({
@@ -84,7 +89,7 @@ export const whatsappService = {
         const response = await this.processMessage(msg);
 
         if (response) {
-          await client.sendMessage(msg.from, response);
+          await client!.sendMessage(msg.from, response);
           logger.info(`Replied to ${msg.from}`);
         }
       } catch (err) {
@@ -93,6 +98,18 @@ export const whatsappService = {
     });
 
     client.initialize();
+  },
+
+  /**
+   * Destroy WhatsApp Client
+   */
+  async destroy(): Promise<void> {
+    if (client) {
+      logger.info('Destroying WhatsApp Client...');
+      await client.destroy();
+      client = undefined;
+      logger.info('WhatsApp Client destroyed');
+    }
   },
 
   /**
@@ -564,6 +581,7 @@ export const whatsappService = {
 
       // Send the file directly
       const chatId = mobile.includes('@') ? mobile : `${mobile.replace(/\D/g, '')}@c.us`;
+      if (!client) throw new Error('Client not initialized');
       await client.sendMessage(chatId, media);
 
       return `✅ *${docName}* sent directly below.\n\n📝 Select another item or type "back" to return.`;

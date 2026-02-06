@@ -59,6 +59,7 @@ const startServer = async (): Promise<void> => {
         try {
           await disconnectDatabase();
           await disconnectRedis();
+          await whatsappService.destroy();
           logger.info('✅ Graceful shutdown complete');
           process.exit(0);
         } catch (error) {

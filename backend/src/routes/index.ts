@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import authRoutes from './auth.routes';
-import clientRoutes from './client.routes';
+// import clientRoutes from './client.routes'; // Legacy
+import clientRoutes from '../modules/client/presentation/client.routes';
 import documentRoutes from './document.routes';
 import logRoutes from './log.routes';
 import whatsappRoutes from './whatsapp.routes';
