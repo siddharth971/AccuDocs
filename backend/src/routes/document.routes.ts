@@ -147,4 +147,44 @@ router.get('/:id/download', documentController.getDownloadUrl);
  */
 router.delete('/:id', adminOnly, documentController.deleteDocument);
 
+/**
+ * @swagger
+ * /documents/{id}/version:
+ *   post:
+ *     summary: Upload a new version of a document
+ *     tags: [Documents]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: New version uploaded
+ */
+router.post('/:id/version', adminOnly, uploadSingle, documentController.uploadNewVersion);
+
+/**
+ * @swagger
+ * /documents/{id}/versions:
+ *   get:
+ *     summary: Get document versions
+ *     tags: [Documents]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: List of versions
+ */
+router.get('/:id/versions', documentController.getDocumentVersions);
+
 export default router;

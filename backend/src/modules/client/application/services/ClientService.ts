@@ -42,7 +42,10 @@ export class ClientService {
       // 2. Create Client
       const clientOrError = Client.create({
         code: dto.code,
-        userId: user.id
+        name: dto.name,
+        userId: user.id,
+        status: 'active',
+        metadata: {}
       });
       if (clientOrError.isFailure) {
         throw new Error(clientOrError.getError().toString());
@@ -76,6 +79,9 @@ export class ClientService {
       return {
         id: plain.id,
         code: plain.code,
+        name: plain.name,
+        status: plain.status,
+        metadata: plain.metadata,
         user: plain.user,
         years: plain.years,
         createdAt: plain.createdAt,
@@ -129,10 +135,13 @@ export class ClientService {
     }
 
     // Update Client
-    if (dto.code) {
+    if (dto.code || dto.status || dto.metadata || dto.name) {
       const updateClientOrError = Client.create({
-        code: dto.code,
-        userId: client.userId
+        code: dto.code || client.code,
+        name: dto.name || client.name,
+        userId: client.userId,
+        status: (dto.status as any) || client.status,
+        metadata: dto.metadata || client.metadata
       }, client.id);
 
       if (updateClientOrError.isSuccess) {
@@ -169,13 +178,16 @@ export class ClientService {
     return {
       id: client.id,
       code: client.code,
+      name: client.name,
+      status: client.status,
+      metadata: client.metadata,
       user: {
         id: user.id,
         name: user.name,
         mobile: user.mobile,
         isActive: user.isActive
       },
-      years: [] // Years fetching logic omitted for brevity, should fetch if needed
+      years: []
     };
   }
 }

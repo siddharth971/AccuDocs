@@ -10,11 +10,14 @@ export interface DocumentAttributes {
   size: number;
   yearId: string;
   uploadedBy: string;
+  currentVersion: number;
+  metadata?: object;
   createdAt?: Date;
   updatedAt?: Date;
+  deletedAt?: Date;
 }
 
-export interface DocumentCreationAttributes extends Optional<DocumentAttributes, 'id' | 'createdAt' | 'updatedAt'> { }
+export interface DocumentCreationAttributes extends Optional<DocumentAttributes, 'id' | 'createdAt' | 'updatedAt' | 'metadata' | 'currentVersion' | 'deletedAt'> { }
 
 export class Document extends Model<DocumentAttributes, DocumentCreationAttributes> implements DocumentAttributes {
   declare public id: string;
@@ -25,13 +28,17 @@ export class Document extends Model<DocumentAttributes, DocumentCreationAttribut
   declare public size: number;
   declare public yearId: string;
   declare public uploadedBy: string;
+  declare public currentVersion: number;
+  declare public metadata?: object;
 
   declare public readonly createdAt: Date;
   declare public readonly updatedAt: Date;
+  declare public readonly deletedAt?: Date;
 
   // Associations
   public readonly year?: any;
   public readonly uploader?: any;
+  public readonly versions?: any[];
 }
 
 Document.init(
@@ -83,16 +90,28 @@ Document.init(
       },
       field: 'uploaded_by',
     },
+    currentVersion: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+      field: 'current_version',
+    },
+    metadata: {
+      type: process.env.DB_DIALECT === 'postgres' ? DataTypes.JSONB : DataTypes.JSON,
+      allowNull: true,
+    },
   },
   {
     sequelize,
     tableName: 'documents',
     timestamps: true,
+    paranoid: true, // Enable Soft Deletes
     indexes: [
       { fields: ['year_id'] },
       { fields: ['uploaded_by'] },
       { fields: ['file_name'] },
       { fields: ['created_at'] },
+      { fields: ['metadata'], using: 'gin' },
     ],
   }
 );

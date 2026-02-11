@@ -5,7 +5,10 @@ export class ClientMapper {
   public static toDomain(raw: ClientModel): Client {
     const clientOrError = Client.create({
       code: raw.code,
+      name: raw.name,
       userId: raw.userId,
+      status: raw.status as any,
+      metadata: raw.metadata,
     }, raw.id);
 
     if (clientOrError.isFailure) {
@@ -20,7 +23,10 @@ export class ClientMapper {
     return {
       id: client.id,
       code: client.code,
+      name: client.name,
       userId: client.userId,
+      status: client.status,
+      metadata: client.metadata,
     };
   }
 }

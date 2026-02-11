@@ -8,11 +8,16 @@ export interface UpdateClientDTO {
   name?: string;
   mobile?: string;
   code?: string;
+  status?: string;
+  metadata?: any;
 }
 
 export interface ClientResponseDTO {
   id: string;
   code: string;
+  name: string;
+  status: string;
+  metadata?: any;
   user: {
     id: string;
     name: string;

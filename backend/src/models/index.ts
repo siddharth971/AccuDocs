@@ -6,6 +6,7 @@ import { OTP } from './otp.model';
 import { Log } from './log.model';
 import { Folder } from './folder.model';
 import { File } from './file.model';
+import { DocumentVersion } from './document-version.model';
 
 // Define associations
 export const initializeAssociations = (): void => {
@@ -109,6 +110,28 @@ export const initializeAssociations = (): void => {
     foreignKey: 'uploadedBy',
     as: 'uploader',
   });
+
+  // Document -> DocumentVersion (One-to-Many)
+  Document.hasMany(DocumentVersion, {
+    foreignKey: 'documentId',
+    as: 'versions',
+  });
+
+  DocumentVersion.belongsTo(Document, {
+    foreignKey: 'documentId',
+    as: 'document',
+  });
+
+  // User -> DocumentVersion (One-to-Many - created by)
+  User.hasMany(DocumentVersion, {
+    foreignKey: 'createdBy',
+    as: 'createdVersions',
+  });
+
+  DocumentVersion.belongsTo(User, {
+    foreignKey: 'createdBy',
+    as: 'creator',
+  });
 };
 
 // Export all models
@@ -120,6 +143,7 @@ export { OTP } from './otp.model';
 export { Log } from './log.model';
 export { Folder } from './folder.model';
 export { File } from './file.model';
+export { DocumentVersion } from './document-version.model';
 
 // Export types
 export type { UserAttributes, UserCreationAttributes, UserRole } from './user.model';
@@ -130,3 +154,4 @@ export type { OTPAttributes, OTPCreationAttributes } from './otp.model';
 export type { LogAttributes, LogCreationAttributes, LogAction } from './log.model';
 export type { FolderAttributes, FolderCreationAttributes, FolderType } from './folder.model';
 export type { FileAttributes, FileCreationAttributes } from './file.model';
+export type { DocumentVersionAttributes, DocumentVersionCreationAttributes } from './document-version.model';

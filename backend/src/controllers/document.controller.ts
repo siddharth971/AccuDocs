@@ -103,3 +103,39 @@ export const getStorageStats = asyncHandler(async (req: Request, res: Response) 
   const stats = await documentService.getStorageStats(clientId as string);
   sendSuccess(res, stats);
 });
+
+/**
+ * Upload a new version of a document
+ * POST /documents/:id/version
+ */
+export const uploadNewVersion = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) {
+    throw new BadRequestError('No file uploaded');
+  }
+
+  const userId = req.user!.userId;
+  const ip = req.ip || req.socket.remoteAddress;
+
+  const result = await documentService.uploadNewVersion(
+    req.params.id,
+    {
+      originalname: req.file.originalname,
+      buffer: req.file.buffer,
+      mimetype: req.file.mimetype,
+      size: req.file.size,
+    },
+    userId,
+    ip
+  );
+
+  sendSuccess(res, result, 'New version uploaded successfully');
+});
+
+/**
+ * Get document versions
+ * GET /documents/:id/versions
+ */
+export const getDocumentVersions = asyncHandler(async (req: Request, res: Response) => {
+  const versions = await documentService.getVersions(req.params.id);
+  sendSuccess(res, versions);
+});

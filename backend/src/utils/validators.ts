@@ -41,6 +41,25 @@ export const updateClientSchema = z.object({
   code: z.string().regex(patterns.clientCode, 'Client code must be 2-10 uppercase alphanumeric characters').optional(),
 });
 
+// User schemas
+export const createUserSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must not exceed 100 characters'),
+  mobile: z.string().regex(patterns.mobile, 'Invalid mobile number format'),
+  role: z.enum(['admin', 'client']),
+  email: z.string().email('Invalid email format').optional().nullable(),
+  password: z.string().min(8, 'Password must be at least 8 characters').optional(),
+  isActive: z.boolean().optional(),
+});
+
+export const updateUserSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').max(100, 'Name must not exceed 100 characters').optional(),
+  mobile: z.string().regex(patterns.mobile, 'Invalid mobile number format').optional(),
+  role: z.enum(['admin', 'client']).optional(),
+  email: z.string().email('Invalid email format').optional().nullable(),
+  password: z.string().min(8, 'Password must be at least 8 characters').optional(),
+  isActive: z.boolean().optional(),
+});
+
 // Year schemas
 export const createYearSchema = z.object({
   year: z.string().regex(patterns.year, 'Year must be between 2021 and 2030'),
@@ -84,6 +103,8 @@ export type SendOTPInput = z.infer<typeof sendOTPSchema>;
 export type VerifyOTPInput = z.infer<typeof verifyOTPSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type CreateClientInput = z.infer<typeof createClientSchema>;
 export type UpdateClientInput = z.infer<typeof updateClientSchema>;
 export type CreateYearInput = z.infer<typeof createYearSchema>;

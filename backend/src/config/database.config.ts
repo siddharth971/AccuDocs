@@ -2,7 +2,7 @@ import { Sequelize, Options } from 'sequelize';
 import { config } from './env.config';
 import { logger } from '../utils/logger';
 
-const dialect = (process.env.DB_DIALECT as any) || 'mysql';
+const dialect = (process.env.DB_DIALECT as any) || 'postgres';
 const storage = process.env.DB_STORAGE || './database.sqlite';
 
 const sequelizeOptions: Options = {
@@ -21,12 +21,17 @@ const sequelizeOptions: Options = {
     timestamps: true,
     underscored: true,
     freezeTableName: true,
+    // Enable soft deletes by default for all models
+    paranoid: true,
   },
   dialectOptions: {
-    dateStrings: true,
-    typeCast: true,
+    // casting for postgres to treat numeric as float/int instead of string if needed, 
+    // but usually standard is fine. 
+    // connectTimeout: 60000, 
   },
-  ...(dialect !== 'sqlite' && { timezone: '+05:30' }),
+  // Postgres specific timezone handling is usually UTC, but we'll keep the offset logic if desired
+  // or better yet run in UTC.
+  timezone: '+00:00', // Best practice is UTC
 };
 
 export const sequelize = new Sequelize(
@@ -53,7 +58,8 @@ export const connectDatabase = async (): Promise<void> => {
         }
       }
 
-      await sequelize.sync();
+      // Sync schema (alter: true updates tables if they exist)
+      await sequelize.sync({ alter: dialect !== 'sqlite' });
       logger.info('✅ Database synchronized');
     }
   } catch (error) {

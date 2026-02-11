@@ -1,4 +1,4 @@
-import { documentRepository, yearRepository, clientRepository, logRepository } from '../repositories';
+import { documentRepository, yearRepository, clientRepository, logRepository, documentVersionRepository } from '../repositories';
 import { s3Helpers } from '../config';
 import { Document } from '../models';
 import { NotFoundError, BadRequestError, ForbiddenError } from '../utils/errors';
@@ -21,6 +21,8 @@ export interface DocumentResponse {
   originalName: string;
   mimeType: string;
   size: number;
+  currentVersion: number;
+  metadata?: any;
   uploadedBy: {
     id: string;
     name: string;
@@ -78,6 +80,17 @@ export const documentService = {
       size: file.size,
       yearId,
       uploadedBy: uploaderId,
+      currentVersion: 1,
+      metadata: {}
+    });
+
+    // Create initial version record
+    await documentVersionRepository.create({
+      documentId: document.id,
+      versionNumber: 1,
+      fileName: uniqueFileName,
+      s3Path: s3Path,
+      createdBy: uploaderId,
     });
 
     // Generate download URL
@@ -211,6 +224,77 @@ export const documentService = {
   },
 
   /**
+   * Get document versions
+   */
+  async getVersions(documentId: string): Promise<any[]> {
+    const versions = await documentVersionRepository.findByDocumentId(documentId);
+    return versions;
+  },
+
+  /**
+   * Upload a new version of a document
+   */
+  async uploadNewVersion(
+    documentId: string,
+    file: {
+      originalname: string;
+      buffer: Buffer;
+      mimetype: string;
+      size: number;
+    },
+    uploaderId: string,
+    ip?: string
+  ): Promise<any> {
+    const document = await documentRepository.findById(documentId);
+    if (!document) throw new NotFoundError('Document not found');
+
+    const year = await yearRepository.findById(document.yearId);
+    const client = await clientRepository.findById(year!.clientId);
+
+    // Generate unique filename for new version
+    const fileExtension = file.originalname.split('.').pop() || '';
+    const uniqueFileName = `${uuidv4()}_v${document.currentVersion + 1}.${fileExtension}`;
+    const s3Path = s3Helpers.generateDocumentKey(client!.code, year!.year, uniqueFileName);
+
+    // Upload to S3
+    await s3Helpers.uploadFile(s3Path, file.buffer, file.mimetype, {
+      originalName: file.originalname,
+      uploadedBy: uploaderId,
+      documentId,
+      version: String(document.currentVersion + 1),
+    });
+
+    // Update main document record
+    const newVersionNumber = document.currentVersion + 1;
+    await document.update({
+      currentVersion: newVersionNumber,
+      fileName: uniqueFileName,
+      s3Path: s3Path,
+      size: file.size,
+    });
+
+    // Create version record
+    const version = await documentVersionRepository.create({
+      documentId: document.id,
+      versionNumber: newVersionNumber,
+      fileName: uniqueFileName,
+      s3Path: s3Path,
+      createdBy: uploaderId,
+    });
+
+    // Log the action
+    await logRepository.create({
+      userId: uploaderId,
+      action: 'DOCUMENT_VERSION_UPLOADED',
+      description: `Uploaded version ${newVersionNumber} for ${document.originalName}`,
+      ip,
+      metadata: { documentId: document.id, version: newVersionNumber },
+    });
+
+    return this.formatDocumentResponse(document);
+  },
+
+  /**
    * Get storage statistics
    */
   async getStorageStats(
@@ -263,6 +347,8 @@ export const documentService = {
       originalName: document.originalName,
       mimeType: document.mimeType,
       size: document.size,
+      currentVersion: document.currentVersion,
+      metadata: document.metadata,
       uploadedBy: {
         id: uploader?.id || '',
         name: uploader?.name || 'Unknown',
