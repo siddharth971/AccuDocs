@@ -80,6 +80,7 @@ DocumentVersion.init(
     tableName: 'document_versions',
     timestamps: true,
     updatedAt: false, // Immutable versions
+    paranoid: false,
     deletedAt: false, // Versions shouldn't be soft deleted usually, but can be if we want full parity. I'll stick to immutable.
     indexes: [
       { fields: ['document_id'] },

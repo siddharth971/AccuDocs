@@ -88,6 +88,7 @@ File.init(
     sequelize,
     tableName: 'files',
     timestamps: true,
+    paranoid: false,
     indexes: [
       { fields: ['folder_id'] },
       { fields: ['uploaded_by'] },

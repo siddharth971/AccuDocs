@@ -62,6 +62,7 @@ OTP.init(
     sequelize,
     tableName: 'otps',
     timestamps: true,
+    paranoid: false,
     indexes: [
       { fields: ['mobile'] },
       { fields: ['expires_at'] },

@@ -83,6 +83,7 @@ Folder.init(
     sequelize,
     tableName: 'folders',
     timestamps: true,
+    paranoid: false,
     indexes: [
       { fields: ['client_id'] },
       { fields: ['parent_id'] },

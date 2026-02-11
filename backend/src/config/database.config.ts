@@ -21,8 +21,8 @@ const sequelizeOptions: Options = {
     timestamps: true,
     underscored: true,
     freezeTableName: true,
-    // Enable soft deletes by default for all models
-    paranoid: true,
+    // Soft delete is enabled per-model (users/clients/documents).
+    paranoid: false,
   },
   dialectOptions: {
     // casting for postgres to treat numeric as float/int instead of string if needed, 

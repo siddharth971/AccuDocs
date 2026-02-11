@@ -114,6 +114,7 @@ Log.init(
     tableName: 'logs',
     timestamps: true,
     updatedAt: false, // Logs are immutable
+    paranoid: false,
     indexes: [
       { fields: ['user_id'] },
       { fields: ['action'] },

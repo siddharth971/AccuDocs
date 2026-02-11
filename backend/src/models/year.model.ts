@@ -52,6 +52,7 @@ Year.init(
     sequelize,
     tableName: 'years',
     timestamps: true,
+    paranoid: false,
     indexes: [
       { fields: ['client_id'] },
       { fields: ['year'] },
