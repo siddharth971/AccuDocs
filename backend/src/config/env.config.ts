@@ -46,6 +46,10 @@ export const config = {
 
 
 
+  whatsapp: {
+    enabled: process.env.WHATSAPP_ENABLED !== 'false',
+  },
+
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || '',
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || 'default-secret',

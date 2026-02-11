@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { container } from 'tsyringe';
 import { UserController } from './controllers/UserController';
+import { UserService } from '../application/services/UserService';
 import { authenticate, adminOnly, validateBody, validateQuery } from '../../../middlewares';
 import { createUserSchema, updateUserSchema, paginationSchema } from '../../../utils/validators';
 import { SequelizeUserRepository } from '../infrastructure/repositories/SequelizeUserRepository';
@@ -11,7 +12,8 @@ if (!container.isRegistered("IUserRepository")) {
 }
 
 const router = Router();
-const userController = container.resolve(UserController);
+const userService = container.resolve(UserService);
+const userController = new UserController(userService);
 
 router.use(authenticate, adminOnly);
 

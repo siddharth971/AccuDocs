@@ -38,8 +38,12 @@ const startServer = async (): Promise<void> => {
       logger.debug('Default admin already exists');
     }
 
-    // Initialize WhatsApp Client
-    whatsappService.initialize();
+    // Initialize WhatsApp client only when enabled.
+    if (config.whatsapp.enabled) {
+      whatsappService.initialize();
+    } else {
+      logger.info('⚠️ WhatsApp client initialization is disabled (WHATSAPP_ENABLED=false)');
+    }
 
     // Create and start Express app
     const app = createApp();

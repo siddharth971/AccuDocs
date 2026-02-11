@@ -2,7 +2,7 @@
 echo Starting AccuDocs locally...
 
 echo Starting Backend...
-start "AccuDocs Backend" cmd /k "cd backend && npm run dev"
+start "AccuDocs Backend" cmd /k "cd backend && set NODE_ENV=development && set DB_DIALECT=sqlite && set DB_STORAGE=./database.sqlite && set REDIS_ENABLED=false && set WHATSAPP_ENABLED=false && npm run dev"
 
 echo Starting Frontend...
 start "AccuDocs Frontend" cmd /k "cd frontend && npm start"
@@ -16,5 +16,5 @@ echo Default Admin Credentials:
 echo Mobile: +919999999999
 echo Password: Admin@123
 echo.
-echo Note: Backend is using SQLite and Mock Redis. No Docker required.
+echo Note: Backend is using SQLite + Mock Redis + WhatsApp disabled. No Docker required.
 pause
