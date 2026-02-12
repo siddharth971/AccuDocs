@@ -6,7 +6,7 @@ AccuDocs is a production-ready document management system designed for accountan
 
 - **Backend API**: [https://accudocs.onrender.com](https://accudocs.onrender.com)
 - **API Documentation**: [https://accudocs.onrender.com/api-docs](https://accudocs.onrender.com/api-docs)
-- **Frontend**: _[Deployment In Progress]_ (Local: `http://localhost:4200`)
+- **Frontend**: [https://siddharth971.github.io/AccuDocs/](https://siddharth971.github.io/AccuDocs/) (Live)
 
 ---
 
