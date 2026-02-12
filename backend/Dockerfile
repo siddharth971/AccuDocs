@@ -1,4 +1,4 @@
-# AccuDocs Backend Dockerfile
+# AccuDocs Backend Dockerfile (Back4app Containers)
 FROM node:22-alpine AS builder
 
 # Install build dependencies
@@ -9,7 +9,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including dev)
+# Install all dependencies (including dev for TypeScript compilation)
 RUN npm ci
 
 # Copy source code
@@ -18,11 +18,8 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
-# Production stage
+# ── Production stage ──
 FROM node:22-alpine
-
-# Install PM2 globally
-RUN npm install -g pm2
 
 WORKDIR /app
 
@@ -30,11 +27,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built files
+# Copy built files from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/ecosystem.config.js ./
 
 # Create logs directory
 RUN mkdir -p logs
@@ -48,12 +44,13 @@ RUN chown -R nodejs:nodejs /app
 
 USER nodejs
 
-# Expose port
+# Back4app injects PORT via env; default to 3000
+ENV PORT=3000
 EXPOSE 3000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/v1/health || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/api/v1/health || exit 1
 
-# Start with PM2
-CMD ["pm2-runtime", "ecosystem.config.js"]
+# Start directly with node (Back4app manages the process lifecycle)
+CMD ["node", "dist/server.js"]
