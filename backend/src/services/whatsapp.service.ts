@@ -99,6 +99,7 @@ export const whatsappService = {
         restartOnAuthFail: true,
         authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
         puppeteer: {
+          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
           headless: true,
           args: [
             '--no-sandbox',
