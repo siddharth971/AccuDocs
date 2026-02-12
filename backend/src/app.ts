@@ -9,6 +9,7 @@ import routes from './routes';
 import { errorHandler, notFoundHandler, apiLimiter } from './middlewares';
 import { logger } from './utils/logger';
 
+
 // Swagger configuration
 const swaggerOptions = {
   definition: {
@@ -41,9 +42,10 @@ const swaggerOptions = {
   apis: ['./src/routes/*.ts'],
 };
 
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
-
 export const createApp = (): Application => {
+  // Generate Swagger spec inside createApp to avoid blocking import
+  const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
   const app = express();
 
   // Trust proxy for rate limiting and IP detection

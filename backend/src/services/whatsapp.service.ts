@@ -1,11 +1,10 @@
 
-import { Client, LocalAuth, MessageMedia } from 'whatsapp-web.js';
+import type { Client, LocalAuth, MessageMedia as MessageMediaType } from 'whatsapp-web.js';
 import axios from 'axios';
 import * as qrcode from 'qrcode-terminal';
-import { config } from '../config';
-import { redisHelpers } from '../config';
+import { config, redisHelpers } from '../config';
 import { logger } from '../utils/logger';
-import { clientRepository, yearRepository, documentRepository, userRepository, folderRepository, fileRepository } from '../repositories';
+import { clientRepository, userRepository, folderRepository } from '../repositories';
 import { authService } from './auth.service';
 import { s3Helpers } from '../config/s3.config';
 
@@ -34,6 +33,44 @@ export interface WhatsAppSession {
 }
 
 let client: Client | undefined;
+let MessageMedia: typeof MessageMediaType;
+
+const setupClientEvents = () => {
+  if (!client) return;
+
+  client.on('qr', (qr) => {
+    logger.info('QR Code received. Scan it with your phone:');
+    qrcode.generate(qr, { small: true });
+  });
+
+  client.on('ready', () => {
+    logger.info('✅ WhatsApp Client is ready!');
+  });
+
+  client.on('authenticated', () => {
+    logger.info('✅ WhatsApp Client authenticated!');
+  });
+
+  client.on('auth_failure', (msg) => {
+    logger.error('❌ WhatsApp Authentication failure:', msg);
+  });
+
+  client.on('message', async (msg) => {
+    try {
+      if (msg.from.includes('@g.us')) return; // Ignore group messages
+
+      // Process message and get response
+      const response = await whatsappService.processMessage(msg);
+
+      if (response && client) {
+        await client.sendMessage(msg.from, response);
+        logger.info(`Replied to ${msg.from}`);
+      }
+    } catch (err) {
+      logger.error('Error handling message:', err);
+    }
+  });
+};
 
 export const whatsappService = {
   /**
@@ -47,57 +84,39 @@ export const whatsappService = {
 
     logger.info('Initializing WhatsApp Client...');
 
-    client = new Client({
-      restartOnAuthFail: true,
-      authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
-      puppeteer: {
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
-          '--no-first-run',
-          '--no-zygote',
-          '--disable-gpu'
-        ]
+    import('whatsapp-web.js').then((pkg: any) => {
+      const Client = pkg.Client || pkg.default?.Client;
+      const LocalAuth = pkg.LocalAuth || pkg.default?.LocalAuth;
+      const MM = pkg.MessageMedia || pkg.default?.MessageMedia;
+
+      if (!Client || !LocalAuth) {
+        logger.error('❌ Failed to extract Client or LocalAuth from whatsapp-web.js package');
+        return;
       }
-    });
 
-    client.on('qr', (qr) => {
-      logger.info('QR Code received. Scan it with your phone:');
-      qrcode.generate(qr, { small: true });
-    });
-
-    client.on('ready', () => {
-      logger.info('✅ WhatsApp Client is ready!');
-    });
-
-    client.on('authenticated', () => {
-      logger.info('✅ WhatsApp Client authenticated!');
-    });
-
-    client.on('auth_failure', (msg) => {
-      logger.error('❌ WhatsApp Authentication failure:', msg);
-    });
-
-    client.on('message', async (msg) => {
-      try {
-        if (msg.from.includes('@g.us')) return; // Ignore group messages
-
-        // Process message and get response
-        const response = await this.processMessage(msg);
-
-        if (response) {
-          await client!.sendMessage(msg.from, response);
-          logger.info(`Replied to ${msg.from}`);
+      MessageMedia = MM;
+      client = new Client({
+        restartOnAuthFail: true,
+        authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
+        puppeteer: {
+          headless: true,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+          ]
         }
-      } catch (err) {
-        logger.error('Error handling message:', err);
-      }
-    });
+      });
 
-    client.initialize();
+      setupClientEvents();
+      client!.initialize();
+    }).catch(err => {
+      logger.error('❌ Failed to load whatsapp-web.js:', err);
+    });
   },
 
   /**
