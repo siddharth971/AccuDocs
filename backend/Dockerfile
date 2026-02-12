@@ -1,5 +1,5 @@
 # AccuDocs Backend Dockerfile
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache python3 make g++
@@ -19,7 +19,7 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM node:18-alpine
+FROM node:22-alpine
 
 # Install PM2 globally
 RUN npm install -g pm2
