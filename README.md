@@ -1,207 +1,121 @@
-# AccuDocs - Accountant Client Document Management System
+# 📄 AccuDocs - Accountant Client Document Management System
 
-A production-ready document management system with WhatsApp-based authentication, designed for accountants to securely manage and share client documents.
+AccuDocs is a production-ready document management system designed for accountants to securely manage and share client documents. It features **WhatsApp-based authentication** (via WhatsApp Web.js) and a modern Angular frontend.
 
-## 🚀 Features
+## 🔗 Live Demo
 
-- **WhatsApp Authentication**: OTP-based login via WhatsApp for clients
-- **Admin Dashboard**: Comprehensive admin panel for managing clients and documents
-- **Secure Document Storage**: Files stored in AWS S3 with AES-256 encryption
-- **Role-Based Access Control**: Admin and client roles with appropriate permissions
-- **Real-time Audit Logs**: Complete activity tracking for compliance
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
-- **Dark Mode Support**: User-preferred theme support
+- **Backend API**: [https://accudocs.onrender.com](https://accudocs.onrender.com)
+- **API Documentation**: [https://accudocs.onrender.com/api-docs](https://accudocs.onrender.com/api-docs)
+- **Frontend**: _[Deployment In Progress]_ (Local: `http://localhost:4200`)
 
-## 🏗️ Architecture
+---
 
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Angular SPA   │────▶│  Express API    │────▶│     MySQL       │
-│   (Frontend)    │     │   (Backend)     │     │   (Database)    │
-└─────────────────┘     └────────┬────────┘     └─────────────────┘
-                                 │
-                    ┌────────────┼────────────┐
-                    │            │            │
-                    ▼            ▼            ▼
-              ┌─────────┐  ┌─────────┐  ┌─────────┐
-              │  Redis  │  │  AWS S3 │  │  Twilio │
-              │ (Cache) │  │ (Files) │  │(WhatsApp)│
-              └─────────┘  └─────────┘  └─────────┘
-```
+## 🚀 Key Features
 
-## 📁 Project Structure
-
-```
-AccuDocs/
-├── backend/                 # Node.js Express API
-│   ├── src/
-│   │   ├── config/         # Configuration files
-│   │   ├── controllers/    # Route handlers
-│   │   ├── middlewares/    # Express middleware
-│   │   ├── models/         # Sequelize models
-│   │   ├── repositories/   # Data access layer
-│   │   ├── routes/         # API routes
-│   │   ├── services/       # Business logic
-│   │   └── utils/          # Utility functions
-│   ├── Dockerfile
-│   └── package.json
-│
-├── frontend/                # Angular 17 SPA
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── core/       # Services, guards, interceptors
-│   │   │   ├── features/   # Feature modules
-│   │   │   └── shared/     # Shared components
-│   │   ├── environments/
-│   │   └── styles.scss
-│   ├── Dockerfile
-│   └── package.json
-│
-├── database/
-│   └── schema.sql          # MySQL schema
-│
-├── nginx/
-│   └── nginx.conf          # Nginx configuration
-│
-└── docker-compose.yml      # Docker orchestration
-```
+- **WhatsApp Authentication**: Login via OTP sent securely to your WhatsApp (No Twilio costs!).
+- **Admin Dashboard**: Comprehensive panel for managing clients, folders, and documents.
+- **Secure Storage**: Files are stored in **AWS S3** with encryption.
+- **Role-Based Access**: Granular permissions for Admins and Clients.
+- **Audit Logs**: Track every action for compliance.
+- **Responsive UI**: Built with Angular 17 and TailwindCSS/Material.
 
 ## 🛠️ Tech Stack
 
 ### Backend
 
-- **Runtime**: Node.js 18+
-- **Framework**: Express.js
-- **Language**: TypeScript
-- **Database**: MySQL 8.0 with Sequelize ORM
-- **Cache**: Redis
+- **Runtime**: Node.js 20+
+- **Framework**: Express.js with TypeScript
+- **Database**: PostgreSQL (Production) / SQLite (Local/Dev)
+- **ORM**: Sequelize
+- **WhatsApp**: `whatsapp-web.js` (running with Puppeteer)
 - **Storage**: AWS S3
-- **Authentication**: JWT + OTP (via Twilio WhatsApp)
 - **Validation**: Zod
-- **Logging**: Winston
+- **Documentation**: Swagger/OpenAPI
 
 ### Frontend
 
 - **Framework**: Angular 17
-- **UI Library**: Angular Material
-- **State Management**: Angular Signals
-- **Styling**: SCSS with custom theming
-- **HTTP**: Angular HttpClient with interceptors
+- **Styling**: TailwindCSS + Angular Material
+- **State Management**: Signals & RxJS
+- **HTTP**: Axios & Angular HttpClient
 
 ### DevOps
 
-- **Containerization**: Docker
-- **Reverse Proxy**: Nginx
-- **Process Manager**: PM2
-- **CI/CD**: GitHub Actions (optional)
+- **Deployment**: Render (Docker)
+- **Containerization**: Docker & Docker Compose
+- **CI/CD**: GitHub Actions
+
+---
 
 ## 🚦 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- MySQL 8.0+
-- Redis
-- AWS S3 bucket
-- Twilio account with WhatsApp enabled
+- Node.js (v18 or v20 recommended)
+- Docker (optional, for containerized run)
+- PostgreSQL (or use embedded SQLite for local dev)
 
-### Environment Setup
-
-1. Clone the repository:
+### 1️⃣ Backend Setup
 
 ```bash
-git clone https://github.com/your-org/accudocs.git
-cd accudocs
-```
+# Clone the repository
+git clone https://github.com/siddharth971/AccuDocs.git
+cd AccuDocs/backend
 
-2. Backend setup:
-
-```bash
-cd backend
-cp .env.example .env
-# Edit .env with your configuration
+# Install dependencies
 npm install
+
+# Configure Environment
+cp .env.example .env
+# Edit .env and set your secrets (AWS, JWT, etc.)
+
+# Run Locally (uses SQLite by default)
 npm run dev
 ```
 
-3. Frontend setup:
+### 2️⃣ Frontend Setup
 
 ```bash
-cd frontend
+cd ../frontend
+
+# Install dependencies
 npm install
+
+# Run Locally
 npm start
 ```
 
-### Docker Deployment
+Access the frontend at `http://localhost:4200`.
+
+---
+
+## 🐳 Docker Deployment
+
+You can run the entire stack using Docker Compose:
 
 ```bash
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
+docker-compose up -d --build
 ```
+
+---
 
 ## 🔐 Security Features
 
-- **JWT Authentication** with access/refresh tokens
-- **AES-256-GCM Encryption** for sensitive data
-- **Rate Limiting** on authentication endpoints
-- **CSRF Protection** via SameSite cookies
-- **Helmet.js** security headers
-- **Input Validation** with Zod schemas
-- **SQL Injection Protection** via Sequelize ORM
-- **XSS Protection** via Content Security Policy
+- **JWT Authentication**: Secure access and refresh (7 days) tokens.
+- **Rate Limiting**: Protects against brute-force attacks.
+- **Input Validation**: Strict Zod schemas for all API inputs.
+- **Helmet.js**: Sets secure HTTP headers.
+- **CORS Config**: Restricted to trusted domains.
 
 ## 📚 API Documentation
 
-API documentation is available at `/api-docs` when running the backend server.
+Full API documentation is available via Swagger UI.
 
-### Key Endpoints
+- **Local**: `http://localhost:3000/api-docs`
+- **Production**: `https://accudocs.onrender.com/api-docs`
 
-| Method | Endpoint                | Description          |
-| ------ | ----------------------- | -------------------- |
-| POST   | /auth/send-otp          | Send OTP to mobile   |
-| POST   | /auth/verify-otp        | Verify OTP and login |
-| POST   | /auth/admin-login       | Admin password login |
-| GET    | /clients                | List all clients     |
-| POST   | /clients                | Create new client    |
-| POST   | /documents/upload       | Upload document      |
-| GET    | /documents/:id/download | Get download URL     |
-| GET    | /logs                   | Get audit logs       |
-
-## 🔧 Configuration
-
-### Environment Variables
-
-| Variable           | Description                          |
-| ------------------ | ------------------------------------ |
-| NODE_ENV           | Environment (development/production) |
-| PORT               | Server port (default: 3000)          |
-| DB_HOST            | MySQL host                           |
-| DB_NAME            | Database name                        |
-| REDIS_HOST         | Redis host                           |
-| JWT_SECRET         | JWT signing secret                   |
-| AWS_S3_BUCKET      | S3 bucket name                       |
-| TWILIO_ACCOUNT_SID | Twilio account SID                   |
-
-See `.env.example` for the complete list.
-
-## 📝 License
-
-MIT License - see LICENSE file for details.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+---
 
 ## 📧 Support
 
-For support, email support@accudocs.example.com
+For support or modifications, please contact the development team.
