@@ -43,7 +43,7 @@ const swaggerOptions = {
       },
     },
   },
-  apis: ['./src/routes/*.ts'],
+  apis: [config.nodeEnv === 'production' ? './dist/routes/*.js' : './src/routes/*.ts'],
 };
 
 export const createApp = (): Application => {
