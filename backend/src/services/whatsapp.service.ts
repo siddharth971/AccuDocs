@@ -122,6 +122,19 @@ const setupClientEvents = () => {
       socketService.emit('whatsapp:log', `Error processing message: ${err.message}`);
     }
   });
+
+  // Handle errors specifically
+  client.on('error', (err) => {
+    logger.error('❌ WhatsApp Client Error:', err);
+    socketService.emit('whatsapp:log', `❌ Client Error: ${err.message}`);
+
+    if (err.message.includes('Target closed') || err.message.includes('Protocol error')) {
+      connectionStatus = 'DISCONNECTED';
+      socketService.emit('whatsapp:status', { status: connectionStatus });
+      // Attempt to cleanup but don't re-init automatically to avoid loops
+      whatsappService.destroy().catch(e => logger.error('Error destroying after crash:', e));
+    }
+  });
 };
 
 export const whatsappService = {
@@ -217,42 +230,55 @@ export const whatsappService = {
     socketService.emit('whatsapp:status', { status: 'INITIALIZING' });
     socketService.emit('whatsapp:log', 'System initializing...');
 
-    import('whatsapp-web.js').then((pkg: any) => {
-      const Client = pkg.Client || pkg.default?.Client;
-      const LocalAuth = pkg.LocalAuth || pkg.default?.LocalAuth;
-      const MM = pkg.MessageMedia || pkg.default?.MessageMedia;
+    const init = async () => {
+      try {
+        const pkg: any = await import('whatsapp-web.js');
+        const Client = pkg.Client || pkg.default?.Client;
+        const LocalAuth = pkg.LocalAuth || pkg.default?.LocalAuth;
+        const MM = pkg.MessageMedia || pkg.default?.MessageMedia;
 
-      if (!Client || !LocalAuth) {
-        logger.error('❌ Failed to extract Client or LocalAuth from whatsapp-web.js package');
-        connectionStatus = 'DISCONNECTED';
-        return;
-      }
-
-      MessageMedia = MM;
-      client = new Client({
-        restartOnAuthFail: true,
-        authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
-        puppeteer: {
-          executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--disable-gpu'
-          ]
+        if (!Client || !LocalAuth) {
+          throw new Error('Failed to extract Client or LocalAuth from whatsapp-web.js');
         }
-      });
 
-      setupClientEvents();
-      client!.initialize();
-    }).catch(err => {
-      logger.error('❌ Failed to load whatsapp-web.js:', err);
-      connectionStatus = 'DISCONNECTED';
-    });
+        MessageMedia = MM;
+        const newClient = new Client({
+          restartOnAuthFail: true,
+          authStrategy: new LocalAuth({ dataPath: '.wwebjs_auth' }),
+          puppeteer: {
+            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+            headless: true,
+            args: [
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+              '--disable-dev-shm-usage',
+              '--disable-accelerated-2d-canvas',
+              '--no-first-run',
+              '--no-zygote',
+              '--disable-gpu'
+            ]
+          }
+        });
+
+        client = newClient;
+        setupClientEvents();
+
+        // Use a safer initialization with catch
+        await newClient.initialize().catch((err: any) => {
+          logger.error('❌ Failed to initialize client instance:', err);
+          connectionStatus = 'DISCONNECTED';
+          socketService.emit('whatsapp:status', { status: connectionStatus });
+          client = undefined;
+        });
+      } catch (err: any) {
+        logger.error('❌ Error during WhatsApp initialization process:', err);
+        connectionStatus = 'DISCONNECTED';
+        socketService.emit('whatsapp:status', { status: connectionStatus });
+        client = undefined;
+      }
+    };
+
+    init();
   },
 
   /**
