@@ -10,9 +10,11 @@ class SocketService {
     this.io = new Server(httpServer, {
       cors: {
         origin: allowedOrigins,
-        methods: ['GET', 'POST'],
+        methods: ['GET', 'POST', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
         credentials: true
-      }
+      },
+      transports: ['websocket', 'polling']
     });
 
     this.io.on('connection', (socket: Socket) => {

@@ -13,7 +13,7 @@ export class SocketService {
 
   constructor() {
     this.socket = io(this.url, {
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
       autoConnect: true,
       withCredentials: true
     });
