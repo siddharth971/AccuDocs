@@ -56,16 +56,32 @@ export const createApp = (): Application => {
   app.set('trust proxy', 1);
 
   // CORS configuration - Moved to top and made more robust
-  const allowedOrigins = config.cors.origin.split(',').map((origin) => origin.trim());
+  const allowedOrigins = config.cors.origin.split(',').map((origin) => origin.trim()).filter(Boolean);
+
   app.use(cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes('*')) {
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (allowed === '*') return true;
+        // Exact match
+        if (allowed === origin) return true;
+        // Match without trailing slash (some browsers or tools might be inconsistent)
+        if (allowed.replace(/\/$/, '') === origin.replace(/\/$/, '')) return true;
+        return false;
+      });
+
+      if (isAllowed || config.nodeEnv === 'development') {
         callback(null, true);
       } else {
-        callback(null, false);
+        // Fallback for GitHub Pages and common subdomains
+        if (origin.includes('github.io') || origin.includes('onrender.com')) {
+          callback(null, true);
+        } else {
+          logger.warn(`CORS blocked for origin: ${origin}`);
+          callback(null, false);
+        }
       }
     },
     credentials: true,
