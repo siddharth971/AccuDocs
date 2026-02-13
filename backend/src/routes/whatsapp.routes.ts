@@ -86,4 +86,57 @@ router.get('/session/:mobile', whatsappController.getSession);
  */
 router.delete('/session/:mobile', whatsappController.clearSession);
 
+/**
+ * @swagger
+ * /whatsapp/qr:
+ *   get:
+ *     summary: Get WhatsApp QR code and status
+ *     tags: [WhatsApp]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: QR code and status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [INITIALIZING, QR_READY, AUTHENTICATED, DISCONNECTED]
+ *                 qrCode:
+ *                   type: string
+ *                   nullable: true
+ */
+router.get('/qr', whatsappController.getQR);
+
+/**
+ * @swagger
+ * /whatsapp/logout:
+ *   post:
+ *     summary: Disconnect bot and regenerate QR
+ *     tags: [WhatsApp]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Bot disconnected
+ */
+router.post('/logout', whatsappController.logout);
+
+/**
+ * @swagger
+ * /whatsapp/chats:
+ *   get:
+ *     summary: Get all active chats
+ *     tags: [WhatsApp]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of active chats
+ */
+router.get('/chats', whatsappController.getChats);
+
 export default router;

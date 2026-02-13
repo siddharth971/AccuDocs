@@ -49,7 +49,6 @@ import { MatSelectModule } from '@angular/material/select';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     FormsModule,
     ButtonComponent,
     CardComponent,
@@ -242,7 +241,7 @@ import { MatSelectModule } from '@angular/material/select';
                     </div>
                     <div>
                       <h2 class="text-xl font-bold text-text-primary">
-                        {{ searchQuery ? 'Search Results' : (breadcrumbs().slice(-1)[0]?.name || 'All Clients') }}
+                        {{ searchQuery ? 'Search Results' : (breadcrumbs().length > 0 ? breadcrumbs().slice(-1)[0].name : 'All Clients') }}
                       </h2>
                       <p class="text-sm text-text-secondary">
                         {{ fileItems().length }} items

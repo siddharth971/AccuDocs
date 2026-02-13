@@ -44,3 +44,29 @@ export const clearSession = asyncHandler(async (req: Request, res: Response) => 
   await whatsappService.clearSession(mobile);
   sendSuccess(res, null, 'Session cleared');
 });
+
+/**
+ * Get WhatsApp QR Code and Status
+ * GET /whatsapp/qr
+ */
+export const getQR = asyncHandler(async (req: Request, res: Response) => {
+  const status = whatsappService.getStatus();
+  sendSuccess(res, status);
+});
+/**
+ * Logout and Regenerate QR
+ * POST /whatsapp/logout
+ */
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  await whatsappService.logout();
+  sendSuccess(res, null, 'Bot disconnected. Regenerating QR...');
+});
+
+/**
+ * Get all active chats
+ * GET /whatsapp/chats
+ */
+export const getChats = asyncHandler(async (req: Request, res: Response) => {
+  const chats = await whatsappService.getChats();
+  sendSuccess(res, chats);
+});

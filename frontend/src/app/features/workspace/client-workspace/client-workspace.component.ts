@@ -50,7 +50,6 @@ import { MatIconModule } from '@angular/material/icon';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink,
     FormsModule,
     ButtonComponent,
     CardComponent,

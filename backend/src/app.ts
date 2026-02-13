@@ -29,7 +29,7 @@ const swaggerOptions = {
         description: 'Development server',
       },
       {
-        url: `https://accudocs.onrender.com/api/${config.apiVersion}`,
+        url: process.env.PUBLIC_API_URL ? `${process.env.PUBLIC_API_URL}/api/${config.apiVersion}` : `https://accudocs.onrender.com/api/${config.apiVersion}`,
         description: 'Production server',
       },
     ],

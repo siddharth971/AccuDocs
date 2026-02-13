@@ -5,6 +5,7 @@ import { config, validateConfig, connectDatabase, connectRedis, disconnectDataba
 import { initializeAssociations } from './models';
 import { logger } from './utils/logger';
 import { authService, whatsappService } from './services';
+import { socketService } from './services/socket.service';
 
 const startServer = async (): Promise<void> => {
   try {
@@ -38,19 +39,23 @@ const startServer = async (): Promise<void> => {
       logger.debug('Default admin already exists');
     }
 
-    // Initialize WhatsApp client only when enabled.
-    if (config.whatsapp.enabled) {
-      whatsappService.initialize();
-    } else {
-      logger.info('⚠️ WhatsApp client initialization is disabled (WHATSAPP_ENABLED=false)');
-    }
-
     // Create and start Express app
     const app = createApp();
     const server = app.listen(config.port, () => {
       logger.info(`🚀 AccuDocs API server running on port ${config.port}`);
       logger.info(`📚 API Documentation: http://localhost:${config.port}/api-docs`);
       logger.info(`🔧 Environment: ${config.nodeEnv}`);
+
+      // Initialize Socket.IO
+      const origins = config.cors.origin.split(',').map(o => o.trim());
+      socketService.initialize(server, origins);
+
+      // Initialize WhatsApp client only when enabled.
+      if (config.whatsapp.enabled) {
+        whatsappService.initialize();
+      } else {
+        logger.info('⚠️ WhatsApp client initialization is disabled (WHATSAPP_ENABLED=false)');
+      }
     });
 
     // Graceful shutdown handlers

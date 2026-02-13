@@ -2,11 +2,15 @@
 import type { Client, LocalAuth, MessageMedia as MessageMediaType } from 'whatsapp-web.js';
 import axios from 'axios';
 import * as qrcode from 'qrcode-terminal';
+import * as fs from 'fs';
+import * as path from 'path';
 import { config, redisHelpers } from '../config';
 import { logger } from '../utils/logger';
 import { clientRepository, userRepository, folderRepository } from '../repositories';
 import { authService } from './auth.service';
 import { s3Helpers } from '../config/s3.config';
+import { socketService } from './socket.service';
+import { User } from '../models/user.model';
 
 // WhatsApp session states
 export type SessionState =
@@ -34,30 +38,68 @@ export interface WhatsAppSession {
 
 let client: Client | undefined;
 let MessageMedia: typeof MessageMediaType;
+let currentQR: string | null = null;
+let connectionStatus: 'INITIALIZING' | 'QR_READY' | 'AUTHENTICATED' | 'DISCONNECTED' = 'DISCONNECTED';
 
 const setupClientEvents = () => {
   if (!client) return;
 
   client.on('qr', (qr) => {
-    logger.info('QR Code received. Scan it with your phone:');
+    logger.info('QR Code received. Scan it with your phone.');
+    currentQR = qr;
+    connectionStatus = 'QR_READY';
     qrcode.generate(qr, { small: true });
+
+    socketService.emit('whatsapp:qr', qr);
+    socketService.emit('whatsapp:status', { status: connectionStatus });
+    socketService.emit('whatsapp:log', 'QR Code received. Waiting for scan...');
   });
 
   client.on('ready', () => {
     logger.info('✅ WhatsApp Client is ready!');
+    currentQR = null;
+    connectionStatus = 'AUTHENTICATED';
+
+    socketService.emit('whatsapp:status', { status: connectionStatus });
+    socketService.emit('whatsapp:log', 'WhatsApp Client is ready!');
   });
 
   client.on('authenticated', () => {
     logger.info('✅ WhatsApp Client authenticated!');
+    currentQR = null;
+    connectionStatus = 'AUTHENTICATED';
+
+    socketService.emit('whatsapp:status', { status: connectionStatus });
+    socketService.emit('whatsapp:log', 'Authenticated successfully');
   });
 
   client.on('auth_failure', (msg) => {
     logger.error('❌ WhatsApp Authentication failure:', msg);
+    connectionStatus = 'DISCONNECTED';
+
+    socketService.emit('whatsapp:status', { status: connectionStatus });
+    socketService.emit('whatsapp:log', `Authentication failed: ${msg}`);
+  });
+
+  client.on('disconnected', (reason) => {
+    logger.warn('⚠️ WhatsApp Client disconnected:', reason);
+    connectionStatus = 'DISCONNECTED';
+    currentQR = null;
+
+    socketService.emit('whatsapp:status', { status: connectionStatus });
+    socketService.emit('whatsapp:log', `Client disconnected: ${reason}`);
   });
 
   client.on('message', async (msg) => {
     try {
       if (msg.from.includes('@g.us')) return; // Ignore group messages
+
+      socketService.emit('whatsapp:message', {
+        from: msg.from,
+        body: msg.body,
+        timestamp: msg.timestamp
+      });
+      socketService.emit('whatsapp:log', `Message from ${msg.from}: ${msg.body.substring(0, 50)}...`);
 
       // Process message and get response
       const response = await whatsappService.processMessage(msg);
@@ -65,14 +107,102 @@ const setupClientEvents = () => {
       if (response && client) {
         await client.sendMessage(msg.from, response);
         logger.info(`Replied to ${msg.from}`);
+        socketService.emit('whatsapp:log', `Replied to ${msg.from}`);
+
+        // Emit bot reply to frontend
+        const replyBody = typeof response === 'string' ? response : '[Media/Object Sent]';
+        socketService.emit('whatsapp:message', {
+          from: 'Bot',
+          body: replyBody,
+          timestamp: Math.floor(Date.now() / 1000)
+        });
       }
-    } catch (err) {
+    } catch (err: any) {
       logger.error('Error handling message:', err);
+      socketService.emit('whatsapp:log', `Error processing message: ${err.message}`);
     }
   });
 };
 
 export const whatsappService = {
+  /**
+   * Get current connection status and QR code
+   */
+  getStatus() {
+    return {
+      status: connectionStatus,
+      qrCode: currentQR,
+    };
+  },
+
+  /**
+   * Get list of chats
+   */
+  /**
+   * Get list of chats filtered by registered clients
+   */
+  async getChats() {
+    if (!client || connectionStatus !== 'AUTHENTICATED') {
+      return [];
+    }
+    try {
+      // 1. Get all chats from WhatsApp
+      const allChats = await client.getChats();
+
+      // 2. Get all registered users with mobile numbers
+      const users = await User.findAll({
+        attributes: ['mobile', 'name'],
+        where: {
+          role: 'client', // Assuming we only want clients
+          isActive: true
+        } as any // Cast to any if strict typing complains about enum string
+      });
+
+      // Create a map of normalized mobile -> User Name
+      const clientMap = new Map<string, string>();
+      users.forEach((user: any) => {
+        // Normalize: remove non-digits, remove leading +, remove 91 if needed, but safe to store generic
+        const normalized = user.mobile.replace(/\D/g, '');
+        // Store both strict and loose formats if needed. 
+        // WhatsApp IDs are usually "919876543210" (CountryCode+Number)
+        // Our DB mobile might be "+91 98765 43210" -> "919876543210"
+        clientMap.set(normalized, user.name);
+        // Also handle cases without country code if DB stores local numbers (e.g. 9876543210)
+        if (normalized.length === 10) {
+          clientMap.set(`91${normalized}`, user.name); // Default to India 91 if missing
+        }
+      });
+
+      // 3. Filter chats
+      const filteredChats = allChats.filter(chat => {
+        if (chat.isGroup) return false; // Ignore groups for now
+
+        const chatNumber = chat.id.user; // The number part without @c.us
+        return clientMap.has(chatNumber);
+      });
+
+      // 4. Format for frontend
+      return filteredChats.map(chat => {
+        const chatNumber = chat.id.user;
+        const clientName = clientMap.get(chatNumber) || chat.name || chatNumber;
+
+        return {
+          id: chat.id._serialized,
+          name: clientName, // Use DB name if available
+          unreadCount: chat.unreadCount,
+          lastMessage: chat.lastMessage ? {
+            body: chat.lastMessage.body,
+            timestamp: chat.lastMessage.timestamp
+          } : null
+        };
+      });
+
+    } catch (error) {
+      logger.error('Failed to get chats:', error);
+      return [];
+    }
+  },
+
   /**
    * Initialize WhatsApp Client
    */
@@ -83,6 +213,9 @@ export const whatsappService = {
     }
 
     logger.info('Initializing WhatsApp Client...');
+    connectionStatus = 'INITIALIZING';
+    socketService.emit('whatsapp:status', { status: 'INITIALIZING' });
+    socketService.emit('whatsapp:log', 'System initializing...');
 
     import('whatsapp-web.js').then((pkg: any) => {
       const Client = pkg.Client || pkg.default?.Client;
@@ -91,6 +224,7 @@ export const whatsappService = {
 
       if (!Client || !LocalAuth) {
         logger.error('❌ Failed to extract Client or LocalAuth from whatsapp-web.js package');
+        connectionStatus = 'DISCONNECTED';
         return;
       }
 
@@ -117,6 +251,7 @@ export const whatsappService = {
       client!.initialize();
     }).catch(err => {
       logger.error('❌ Failed to load whatsapp-web.js:', err);
+      connectionStatus = 'DISCONNECTED';
     });
   },
 
@@ -137,8 +272,10 @@ export const whatsappService = {
    */
   async sendMessage(to: string, body: string): Promise<void> {
     if (!client) {
-      logger.warn('WhatsApp client not initialized');
-      return;
+      const errorMsg = 'WhatsApp client not initialized';
+      logger.warn(errorMsg);
+      socketService.emit('whatsapp:log', `⚠️ ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
     try {
@@ -150,8 +287,18 @@ export const whatsappService = {
 
       await client.sendMessage(chatId, body);
       logger.info(`WhatsApp message sent to ${chatId}`);
+
+      // Emit socket events for live feedback
+      socketService.emit('whatsapp:log', `Admin sent message to ${chatId}`);
+      socketService.emit('whatsapp:message', {
+        from: 'You (Admin)',
+        body: body,
+        timestamp: Math.floor(Date.now() / 1000)
+      });
+
     } catch (error: any) {
       logger.error(`Failed to send WhatsApp message: ${error.message}`);
+      socketService.emit('whatsapp:log', `❌ Failed to send message: ${error.message}`);
       throw error;
     }
   },
@@ -641,5 +788,39 @@ export const whatsappService = {
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `💬 Type *Hi* to get started\n` +
       `━━━━━━━━━━━━━━━━━━━━`;
+  },
+
+  /**
+   * Logout and destroy the client, then re-initialize
+   */
+  async logout() {
+    if (client) {
+      try {
+        await client.logout();
+      } catch (err) {
+        logger.warn('Client logout failed, forcing destroy:', err);
+        try { await client.destroy(); } catch (e) { logger.error('Destroy failed', e); }
+      }
+      client = undefined;
+    }
+
+    // Force delete auth folder to ensure fresh QR
+    try {
+      const authPath = path.join(process.cwd(), '.wwebjs_auth');
+      if (fs.existsSync(authPath)) {
+        fs.rmSync(authPath, { recursive: true, force: true });
+        logger.info('Deleted .wwebjs_auth directory');
+      }
+    } catch (err) {
+      logger.error('Failed to delete auth directory:', err);
+    }
+
+    connectionStatus = 'DISCONNECTED';
+    currentQR = null;
+    socketService.emit('whatsapp:status', { status: 'DISCONNECTED' });
+    socketService.emit('whatsapp:log', 'Disconnected manually. Re-initializing...');
+    logger.info('WhatsApp Client logged out manually. Re-initializing...');
+    // Re-initialize to get a new QR code
+    this.initialize();
   },
 };
