@@ -28,6 +28,10 @@ const swaggerOptions = {
         url: `http://localhost:${config.port}/api/${config.apiVersion}`,
         description: 'Development server',
       },
+      {
+        url: `https://accudocs.onrender.com/api/${config.apiVersion}`,
+        description: 'Production server',
+      },
     ],
     components: {
       securitySchemes: {
@@ -66,7 +70,7 @@ export const createApp = (): Application => {
 
   // CORS configuration
   app.use(cors({
-    origin: config.cors.origin.split(','),
+    origin: config.cors.origin.split(',').map((origin) => origin.trim()),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
