@@ -89,6 +89,14 @@ export class DataTableComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   showModal = signal(false);
   closeModalRef = this.closeModal.bind(this);
 
+  // Search Support
+  @Output() search = new EventEmitter<string>();
+
+  updateSearch(query: string) {
+    this.searchQuery.set(query);
+    this.search.emit(query);
+  }
+
   // Modal Support
   formInjector = inject(Injector);
 

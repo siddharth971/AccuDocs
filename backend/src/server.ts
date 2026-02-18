@@ -4,7 +4,7 @@ import { createApp } from './app';
 import { config, validateConfig, connectDatabase, connectRedis, disconnectDatabase, disconnectRedis } from './config';
 import { initializeAssociations } from './models';
 import { logger } from './utils/logger';
-import { authService, whatsappService } from './services';
+import { authService, whatsappService, checklistService } from './services';
 import { socketService } from './services/socket.service';
 
 const startServer = async (): Promise<void> => {
@@ -37,6 +37,14 @@ const startServer = async (): Promise<void> => {
     } catch (error) {
       // Admin already exists, which is fine
       logger.debug('Default admin already exists');
+    }
+
+    // Seed default checklist templates
+    try {
+      await checklistService.seedDefaultTemplates();
+      logger.info('✅ Checklist templates ready');
+    } catch (error) {
+      logger.warn('⚠️ Failed to seed checklist templates:', error);
     }
 
     // Create and start Express app

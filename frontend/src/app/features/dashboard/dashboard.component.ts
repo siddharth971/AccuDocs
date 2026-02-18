@@ -23,8 +23,8 @@ import { QuickInsightsComponent } from './components/quick-insights.component';
     QuickInsightsComponent
   ],
   template: `
-    <div class="space-y-12 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12">
-      
+    <div class="animate-page-enter">
+
       <app-welcome-header [userName]="authService.currentUser()?.name"></app-welcome-header>
 
       <app-stats-grid
@@ -35,8 +35,8 @@ import { QuickInsightsComponent } from './components/quick-insights.component';
         [totalLogs]="logStatsResource.value()?.totalLogs || 0"
       ></app-stats-grid>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
-         <!-- Activity Column -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+         <!-- Activity Column (8/12) -->
          <div class="lg:col-span-8">
             <app-recent-activity
               [activities]="logStatsResource.value()?.recentActivity || []"
@@ -44,7 +44,7 @@ import { QuickInsightsComponent } from './components/quick-insights.component';
             ></app-recent-activity>
          </div>
 
-         <!-- Insights Sidebar -->
+         <!-- Insights Sidebar (4/12) -->
          <div class="lg:col-span-4">
             <app-quick-insights></app-quick-insights>
          </div>

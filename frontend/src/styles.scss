@@ -6,84 +6,85 @@
 @tailwind utilities;
 
 // ==========================================
-// BUTTON COMPONENT CLASSES
+// BUTTON COMPONENT CLASSES (Premium Redesign)
 // ==========================================
 @layer components {
 
-  // Primary button
+  // Primary button — bold, shadowed, 2xl radius
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2;
-    @apply font-semibold text-sm;
-    @apply px-4 py-3 rounded-lg;
+    @apply font-bold text-sm;
+    @apply px-6 py-4 rounded-2xl;
     @apply transition-all duration-200;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply active:scale-[0.98];
-    @apply bg-primary-600 text-white;
-    @apply hover:bg-primary-700;
-    @apply focus-visible:ring-primary-500;
-    @apply shadow-sm hover:shadow-md;
-    @apply dark:bg-primary-500 dark:hover:bg-primary-600;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none;
+    @apply active:scale-[0.95];
+    @apply bg-[#0074c9] text-white;
+    @apply hover:bg-[#005fa3];
+    @apply focus-visible:ring-[#0074c9];
+    @apply shadow-xl shadow-blue-100;
+    @apply dark:bg-[#0074c9] dark:hover:bg-[#005fa3] dark:shadow-blue-900/20;
   }
 
-  // Secondary button
+  // Secondary button — white bg, 2px border
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2;
-    @apply font-semibold text-sm;
-    @apply px-4 py-3 rounded-lg;
+    @apply font-bold text-sm;
+    @apply px-6 py-4 rounded-2xl;
     @apply transition-all duration-200;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply active:scale-[0.98];
+    @apply active:scale-[0.95];
     @apply bg-white text-slate-700;
-    @apply border border-slate-300;
-    @apply hover:bg-secondary-50 hover:border-slate-400;
+    @apply border-2 border-slate-200;
+    @apply hover:bg-slate-50 hover:border-slate-300;
     @apply focus-visible:ring-slate-500;
+    @apply shadow-sm;
     @apply dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600;
-    @apply dark:hover:bg-slate-700;
+    @apply dark:hover:bg-slate-700 dark:hover:border-slate-500;
   }
 
   // Danger button
   .btn-danger {
     @apply inline-flex items-center justify-center gap-2;
-    @apply font-semibold text-sm;
-    @apply px-4 py-3 rounded-lg;
+    @apply font-bold text-sm;
+    @apply px-6 py-4 rounded-2xl;
     @apply transition-all duration-200;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply active:scale-[0.98];
-    @apply bg-danger-600 text-white;
-    @apply hover:bg-danger-700;
-    @apply focus-visible:ring-danger-500;
-    @apply shadow-sm hover:shadow-md;
+    @apply active:scale-[0.95];
+    @apply bg-[#dc2626] text-white;
+    @apply hover:bg-red-700;
+    @apply focus-visible:ring-red-500;
+    @apply shadow-lg shadow-red-100 dark:shadow-red-900/20;
   }
 
   // Success button
   .btn-success {
     @apply inline-flex items-center justify-center gap-2;
-    @apply font-semibold text-sm;
-    @apply px-4 py-3 rounded-lg;
+    @apply font-bold text-sm;
+    @apply px-6 py-4 rounded-2xl;
     @apply transition-all duration-200;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply active:scale-[0.98];
-    @apply bg-success-600 text-white;
-    @apply hover:bg-success-700;
-    @apply focus-visible:ring-success-500;
-    @apply shadow-sm hover:shadow-md;
+    @apply active:scale-[0.95];
+    @apply bg-[#16a34a] text-white;
+    @apply hover:bg-green-700;
+    @apply focus-visible:ring-green-500;
+    @apply shadow-lg shadow-green-100 dark:shadow-green-900/20;
   }
 
   // Ghost button
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2;
-    @apply font-semibold text-sm;
-    @apply px-4 py-3 rounded-lg;
+    @apply font-bold text-sm;
+    @apply px-6 py-4 rounded-2xl;
     @apply transition-all duration-200;
     @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
     @apply disabled:opacity-50 disabled:cursor-not-allowed;
-    @apply active:scale-[0.98];
+    @apply active:scale-[0.95];
     @apply bg-transparent text-slate-700;
-    @apply hover:bg-secondary-100;
+    @apply hover:bg-slate-100;
     @apply focus-visible:ring-slate-500;
     @apply dark:text-slate-300 dark:hover:bg-slate-800;
   }
@@ -91,7 +92,8 @@
   // Icon button
   .btn-icon {
     @apply inline-flex items-center justify-center;
-    @apply p-2 rounded-lg;
+    @apply rounded-xl;
+    padding: 10px;
     @apply text-slate-500;
     @apply hover:bg-slate-100 hover:text-slate-700;
     @apply transition-all duration-200;
@@ -102,14 +104,14 @@
   // Link-style button
   .btn-link {
     @apply inline-flex items-center gap-1;
-    @apply text-primary-600 font-medium text-sm;
-    @apply hover:text-primary-700 hover:underline;
+    @apply text-[#0074c9] font-semibold text-sm;
+    @apply hover:text-[#005fa3] hover:underline;
     @apply transition-colors duration-200;
-    @apply dark:text-primary-400 dark:hover:text-primary-300;
+    @apply dark:text-blue-400 dark:hover:text-blue-300;
   }
 }
 
-// Include essential Material core (needed for some logic, but we'll manually style)
+// Include essential Material core
 @include mat.core();
 
 // ==========================================
@@ -174,14 +176,16 @@
   --ring-offset: 2px;
 
   // ===================
-  // SHADOWS
+  // SHADOWS (Premium)
   // ===================
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.12);
+  --shadow-card: 0 4px 24px -4px rgb(15 23 42 / 0.05);
+  --shadow-card-hover: 0 20px 40px -8px rgb(15 23 42 / 0.1);
   --shadow-dropdown: 0 10px 40px -8px rgb(0 0 0 / 0.15), 0 4px 16px -4px rgb(0 0 0 / 0.1);
   --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 
@@ -213,11 +217,20 @@
   --text-xl: 20px;
   --text-2xl: 24px;
   --text-3xl: 32px;
-  --text-4xl: 40px;
+  --text-4xl: 36px;
+  --text-5xl: 40px;
+
+  // Font Weights
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  --font-black: 900;
 
   // Line Heights
-  --leading-tight: 1.25;
-  --leading-snug: 1.375;
+  --leading-tight: 1.1;
+  --leading-snug: 1.25;
   --leading-normal: 1.5;
   --leading-relaxed: 1.625;
 
@@ -229,6 +242,7 @@
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 24px;
+  --radius-2xl: 32px;
   --radius-full: 9999px;
 
   // ===================
@@ -297,13 +311,15 @@
   // Focus Ring
   --ring-color: rgba(56, 189, 248, 0.3);
 
-  // Shadows
+  // Shadows (deeper in dark mode)
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.3);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.5);
   --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.2);
+  --shadow-card-hover: 0 20px 40px -8px rgb(0 0 0 / 0.4);
   --shadow-dropdown: 0 10px 40px -8px rgb(0 0 0 / 0.5), 0 4px 16px -4px rgb(0 0 0 / 0.4);
   --shadow-modal: 0 25px 50px -12px rgb(0 0 0 / 0.6);
 }
@@ -335,10 +351,12 @@ body {
   background-color: var(--background-color);
   min-height: 100vh;
   overflow-x: hidden;
+  transition: background-color var(--transition-slow) var(--transition-timing),
+    color var(--transition-slow) var(--transition-timing);
 }
 
 // ==========================================
-// TYPOGRAPHY BASE
+// TYPOGRAPHY BASE (Bold hierarchy)
 // ==========================================
 h1,
 h2,
@@ -346,14 +364,16 @@ h3,
 h4,
 h5,
 h6 {
-  font-weight: 600;
+  font-weight: 800;
   line-height: var(--leading-tight);
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 h1 {
-  font-size: var(--text-4xl);
-  letter-spacing: -0.02em;
+  font-size: var(--text-5xl);
+  font-weight: 900;
+  letter-spacing: -0.03em;
 }
 
 h2 {
@@ -416,8 +436,8 @@ a {
 // SCROLLBAR STYLING
 // ==========================================
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -427,12 +447,9 @@ a {
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: var(--radius-full);
-  border: 2px solid transparent;
-  background-clip: content-box;
 
   &:hover {
     background: var(--text-muted);
-    background-clip: content-box;
   }
 }
 
@@ -465,14 +482,14 @@ button {
 }
 
 // ==========================================
-// MATERIAL OVERRIDES (Comprehensive)
+// MATERIAL OVERRIDES
 // ==========================================
 .mat-mdc-form-field {
   width: 100%;
 }
 
 .mat-mdc-dialog-container {
-  --mdc-dialog-container-shape: var(--radius-lg);
+  --mdc-dialog-container-shape: var(--radius-xl);
 }
 
 .mat-mdc-snack-bar-container {
@@ -481,11 +498,12 @@ button {
 
 // Global Menu Styles
 .mat-mdc-menu-panel {
-  --mdc-menu-container-shape: var(--radius-md);
+  --mdc-menu-container-shape: var(--radius-lg);
   --mdc-menu-container-color: var(--surface-color);
   background-color: var(--surface-color) !important;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-dropdown) !important;
+  border-radius: var(--radius-lg) !important;
   min-width: 180px !important;
   max-width: 320px !important;
   overflow: hidden !important;
@@ -500,6 +518,8 @@ button {
   --mdc-menu-item-label-text-color: var(--text-primary);
   --mdc-menu-item-label-text-size: var(--text-sm);
   min-height: 44px !important;
+  border-radius: var(--radius-md) !important;
+  margin: 2px 6px !important;
 
   &:hover:not([disabled]) {
     background-color: var(--background-color) !important;
@@ -558,6 +578,28 @@ button {
   }
 }
 
+// Monospace text utility
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+// ==========================================
+// PREMIUM CARD CLASS
+// ==========================================
+.premium-card {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
 // ==========================================
 // ANIMATION UTILITIES
 // ==========================================
@@ -584,7 +626,7 @@ button {
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(16px);
   }
 
   to {
@@ -596,7 +638,7 @@ button {
 @keyframes slideDown {
   from {
     opacity: 0;
-    transform: translateY(-10px);
+    transform: translateY(-8px);
   }
 
   to {
@@ -608,12 +650,12 @@ button {
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.95) translateY(16px);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -649,13 +691,49 @@ button {
   }
 }
 
+@keyframes notificationPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.3);
+  }
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 // Animation classes
 .animate-fade-in {
   animation: fadeIn var(--transition-normal) var(--transition-timing);
 }
 
 .animate-slide-up {
-  animation: slideUp var(--transition-normal) var(--transition-timing);
+  animation: slideUp var(--transition-slow) var(--transition-timing);
 }
 
 .animate-slide-down {
@@ -663,7 +741,7 @@ button {
 }
 
 .animate-scale-in {
-  animation: scaleIn var(--transition-fast) var(--transition-timing);
+  animation: scaleIn var(--transition-slow) var(--transition-timing);
 }
 
 .animate-pulse {
@@ -674,16 +752,31 @@ button {
   animation: spin 1s linear infinite;
 }
 
+.animate-page-enter {
+  animation: pageEnter 500ms cubic-bezier(0, 0, 0.2, 1) forwards;
+}
+
+.animate-notification-pulse {
+  animation: notificationPulse 2s ease-in-out infinite;
+}
+
+// Stagger children animation
+@for $i from 1 through 8 {
+  .stagger-child:nth-child(#{$i}) {
+    animation-delay: #{($i - 1) * 80}ms;
+  }
+}
+
 // ==========================================
-// SKELETON LOADING
+// SKELETON LOADING (Premium shimmer)
 // ==========================================
 .skeleton {
   background: linear-gradient(90deg,
-      var(--border-subtle) 25%,
-      var(--surface-color) 50%,
-      var(--border-subtle) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+      var(--border-color) 25%,
+      var(--border-subtle) 37%,
+      var(--border-color) 63%);
+  background-size: 300% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm);
 }
 
@@ -703,6 +796,19 @@ button {
   >* {
     pointer-events: auto;
   }
+}
+
+// ==========================================
+// GLOBAL TRANSITION ON THEME SWITCH
+// ==========================================
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition: background-color 300ms ease,
+    color 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease !important;
 }
 
 // ==========================================
@@ -730,4 +836,19 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+// ==========================================
+// LOADING BAR (Top of header)
+// ==========================================
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: 2px;
+  z-index: 9999;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }

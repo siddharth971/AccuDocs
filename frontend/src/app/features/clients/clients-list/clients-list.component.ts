@@ -40,10 +40,28 @@ import {
     })
   ],
   template: `
-    <div class="h-full flex flex-col bg-white dark:bg-slate-900 rounded-lg animate-in fade-in duration-500">
-      <app-data-table 
-        title="Clients"
-        [tableData]="facade.clients()" 
+    <div class="space-y-8 animate-page-enter">
+      <!-- Page Header -->
+      <div>
+        <div class="flex items-center gap-2 text-[#0074c9] dark:text-blue-400 font-bold text-[11px] uppercase" style="letter-spacing: 0.12em;">
+          MANAGEMENT
+        </div>
+        <div class="w-8 h-[3px] bg-[#0074c9] dark:bg-blue-400 rounded-full mt-2 mb-4"></div>
+        <h1
+          class="text-4xl font-black text-slate-900 dark:text-white"
+          style="letter-spacing: -0.03em; line-height: 1.1;"
+        >
+          Clients
+        </h1>
+        <p class="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-2">
+          Manage your client network and their information.
+        </p>
+      </div>
+
+      <!-- Data Table -->
+      <app-data-table
+        title="Client Directory"
+        [tableData]="facade.clients()"
         [tableColumns]="tableColumns"
         [serverSide]="true"
         [totalCount]="facade.totalCount()"
@@ -58,12 +76,12 @@ import {
       >
         <!-- Filters Slot -->
         <div class="flex items-center gap-2" filters>
-          <select class="px-4 py-2 bg-gray-50 dark:bg-slate-800 border-none rounded-full text-sm font-medium text-gray-600 dark:text-slate-300 outline-none hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+          <select class="h-[40px] px-4 bg-[#f8fafc] dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl text-sm font-medium text-slate-600 dark:text-slate-300 outline-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer focus:ring-2 focus:ring-[#0074c9]/20 focus:border-[#0074c9]">
             <option>All Category</option>
-             <option>Retail</option>
-             <option>Wholesale</option>
+            <option>Retail</option>
+            <option>Wholesale</option>
           </select>
-           <select class="px-4 py-2 bg-gray-50 dark:bg-slate-800 border-none rounded-full text-sm font-medium text-gray-600 dark:text-slate-300 outline-none hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+          <select class="h-[40px] px-4 bg-[#f8fafc] dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl text-sm font-medium text-slate-600 dark:text-slate-300 outline-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer focus:ring-2 focus:ring-[#0074c9]/20 focus:border-[#0074c9]">
             <option>All Group</option>
           </select>
         </div>
@@ -71,32 +89,32 @@ import {
 
       <!-- Actions Template -->
       <ng-template #actionsTemplate let-row>
-        <div class="flex items-center justify-end gap-3">
+        <div class="flex items-center justify-end gap-1">
           <!-- View/Open -->
-          <button 
-            [routerLink]="['/workspace', row.id]" 
-            class="text-blue-500 hover:text-blue-700 transition-colors" 
+          <button
+            [routerLink]="['/workspace', row.id]"
+            class="w-8 h-8 flex items-center justify-center rounded-xl text-[#0074c9] hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
             title="Open Workspace"
           >
-            <ng-icon name="heroFolderOpenSolid" size="20"></ng-icon>
-          </button>
-          
-          <!-- Delete -->
-          <button 
-            (click)="onDelete(row)"
-            class="text-red-500 hover:text-red-700 transition-colors" 
-            title="Delete"
-          >
-            <ng-icon name="heroTrashSolid" size="20"></ng-icon>
+            <ng-icon name="heroFolderOpenSolid" size="18"></ng-icon>
           </button>
 
-           <!-- Edit -->
-           <button 
-             (click)="onEdit(row)"
-             class="text-orange-400 hover:text-orange-600 transition-colors" 
-             title="Edit"
-           >
-            <ng-icon name="heroPencilSquareSolid" size="20"></ng-icon>
+          <!-- Edit -->
+          <button
+            (click)="onEdit(row)"
+            class="w-8 h-8 flex items-center justify-center rounded-xl text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+            title="Edit"
+          >
+            <ng-icon name="heroPencilSquareSolid" size="18"></ng-icon>
+          </button>
+
+          <!-- Delete -->
+          <button
+            (click)="onDelete(row)"
+            class="w-8 h-8 flex items-center justify-center rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            title="Delete"
+          >
+            <ng-icon name="heroTrashSolid" size="18"></ng-icon>
           </button>
         </div>
       </ng-template>

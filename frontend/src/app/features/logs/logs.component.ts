@@ -1,115 +1,68 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatChipsModule } from '@angular/material/chips';
 import { LogService, Log } from '@core/services/log.service';
+import { DataTableComponent } from '../../shared/data-table/data-table.component';
+import { TableColumn } from '../../shared/data-table/models';
 
 @Component({
   selector: 'app-logs',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, MatCardModule, MatButtonModule, MatIconModule,
-    MatTableModule, MatPaginatorModule, MatFormFieldModule, MatInputModule,
-    MatSelectModule, MatProgressSpinnerModule, MatChipsModule,
+    CommonModule,
+    FormsModule,
+    DataTableComponent
   ],
   template: `
-    <div class="w-full space-y-6">
-      <!-- Header -->
-      <header>
-        <h1 class="text-2xl font-bold text-text-primary">Activity Logs</h1>
-        <p class="text-text-secondary mt-1">Monitor system activity and user actions.</p>
-      </header>
-
-      <!-- Content Card -->
-      <div class="bg-white dark:bg-slate-800 rounded-xl border border-border-color shadow-sm overflow-hidden">
-        <!-- Filters -->
-        <div class="flex flex-wrap gap-4 p-4 border-b border-border-color bg-slate-50 dark:bg-slate-900/50">
-          <mat-form-field appearance="outline" class="flex-1 min-w-[250px]">
-            <mat-label>Search</mat-label>
-            <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearch()">
-            <mat-icon matPrefix>search</mat-icon>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="min-w-[180px]">
-            <mat-label>Action</mat-label>
-            <mat-select [(ngModel)]="selectedAction" (ngModelChange)="onSearch()">
-              <mat-option value="">All</mat-option>
-              @for (action of actions; track action) {
-                <mat-option [value]="action">{{ logService.getActionLabel(action) }}</mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
+    <div class="space-y-8 animate-page-enter">
+      <!-- Page Header -->
+      <div>
+        <div class="flex items-center gap-2 text-[#0074c9] dark:text-blue-400 font-bold text-[11px] uppercase" style="letter-spacing: 0.12em;">
+          AUDIT TRAIL
         </div>
-
-        @if (isLoading()) {
-          <div class="flex flex-col items-center justify-center py-20">
-            <mat-spinner diameter="40"></mat-spinner>
-            <p class="mt-4 text-text-secondary">Loading logs...</p>
-          </div>
-        } @else if (logs().length === 0) {
-          <div class="flex flex-col items-center justify-center py-20 text-center">
-            <mat-icon class="text-6xl text-text-muted mb-4">history</mat-icon>
-            <h3 class="text-lg font-semibold text-text-primary mb-2">No logs found</h3>
-            <p class="text-text-secondary">No activity has been recorded yet.</p>
-          </div>
-        } @else {
-          <div class="overflow-x-auto">
-            <table mat-table [dataSource]="logs()" class="w-full">
-              <ng-container matColumnDef="action">
-                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">Action</th>
-                <td mat-cell *matCellDef="let log">
-                  <mat-chip class="!text-xs">{{ logService.getActionLabel(log.action) }}</mat-chip>
-                </td>
-              </ng-container>
-
-              <ng-container matColumnDef="description">
-                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">Description</th>
-                <td mat-cell *matCellDef="let log" class="text-text-secondary">{{ log.description }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="user">
-                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">User</th>
-                <td mat-cell *matCellDef="let log">{{ log.user?.name || 'System' }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="ip">
-                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">IP</th>
-                <td mat-cell *matCellDef="let log" class="text-text-muted font-mono text-sm">{{ log.ip || '-' }}</td>
-              </ng-container>
-
-              <ng-container matColumnDef="createdAt">
-                <th mat-header-cell *matHeaderCellDef class="!bg-slate-50 dark:!bg-slate-800 font-semibold">Date</th>
-                <td mat-cell *matCellDef="let log" class="text-text-secondary">{{ log.createdAt | date:'medium' }}</td>
-              </ng-container>
-
-              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-              <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-slate-50 dark:hover:bg-slate-700/50"></tr>
-            </table>
-          </div>
-
-          <mat-paginator
-            [length]="totalCount()"
-            [pageSize]="pageSize()"
-            [pageIndex]="pageIndex()"
-            [pageSizeOptions]="[20, 50, 100]"
-            (page)="onPageChange($event)"
-            showFirstLastButtons
-            class="border-t border-border-color"
-          ></mat-paginator>
-        }
+        <div class="w-8 h-[3px] bg-[#0074c9] dark:bg-blue-400 rounded-full mt-2 mb-4"></div>
+        <h1
+          class="text-4xl font-black text-slate-900 dark:text-white"
+          style="letter-spacing: -0.03em; line-height: 1.1;"
+        >
+          Activity Logs
+        </h1>
+        <p class="text-[15px] font-medium text-slate-500 dark:text-slate-400 mt-2">
+          Track and review all system events and user actions.
+        </p>
       </div>
+
+      <!-- Data Table -->
+      <app-data-table
+        title="System Events"
+        [tableData]="logs()"
+        [tableColumns]="tableColumns"
+        [serverSide]="true"
+        [totalCount]="totalCount()"
+        [loading]="isLoading()"
+        [canAdd]="false"
+        [canEdit]="false"
+        [canDelete]="false"
+        (loadMore)="onPageChange($event)"
+        (search)="onSearch($event)"
+      >
+        <!-- Filters Slot -->
+        <div class="flex items-center gap-2" filters>
+          <select
+            [(ngModel)]="selectedAction"
+            (change)="loadLogs()"
+            class="h-[40px] px-4 bg-[#f8fafc] dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl text-sm font-medium text-slate-600 dark:text-slate-300 outline-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer focus:ring-2 focus:ring-[#0074c9]/20 focus:border-[#0074c9]">
+            <option value="">All Actions</option>
+            @for (action of actions; track action) {
+              <option [value]="action">{{ logService.getActionLabel(action) }}</option>
+            }
+          </select>
+        </div>
+      </app-data-table>
     </div>
   `,
-  styles: [``],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LogsComponent implements OnInit {
   logService = inject(LogService);
@@ -122,8 +75,17 @@ export class LogsComponent implements OnInit {
   searchQuery = '';
   selectedAction = '';
 
-  displayedColumns = ['action', 'description', 'user', 'ip', 'createdAt'];
   actions = ['LOGIN', 'LOGOUT', 'CLIENT_CREATED', 'CLIENT_UPDATED', 'CLIENT_DELETED', 'DOCUMENT_UPLOADED', 'DOCUMENT_DOWNLOADED', 'DOCUMENT_DELETED'];
+
+  get tableColumns(): TableColumn[] {
+    return [
+      { name: 'Action', prop: 'action', type: 'text', sortable: true, width: 150 },
+      { name: 'Description', prop: 'description', type: 'text', sortable: false, width: 300 },
+      { name: 'User', prop: 'user.name', type: 'text', sortable: true, width: 150 },
+      { name: 'IP Address', prop: 'ip', type: 'text', sortable: false, width: 120 },
+      { name: 'Date', prop: 'createdAt', type: 'date', sortable: true, width: 180 },
+    ];
+  }
 
   ngOnInit(): void {
     this.loadLogs();
@@ -138,19 +100,24 @@ export class LogsComponent implements OnInit {
       next: (res) => {
         this.logs.set(res.data);
         this.totalCount.set(res.meta.total);
+        this.isLoading.set(false);
       },
-      complete: () => this.isLoading.set(false),
+      error: (err) => {
+        console.error('Failed to load logs', err);
+        this.isLoading.set(false);
+      }
     });
   }
 
-  onSearch(): void {
+  onSearch(query: string): void {
+    this.searchQuery = query;
     this.pageIndex.set(0);
     this.loadLogs();
   }
 
-  onPageChange(event: PageEvent): void {
-    this.pageIndex.set(event.pageIndex);
-    this.pageSize.set(event.pageSize);
+  onPageChange(event: { offset: number; limit: number }): void {
+    this.pageIndex.set(event.offset);
+    this.pageSize.set(event.limit);
     this.loadLogs();
   }
 }

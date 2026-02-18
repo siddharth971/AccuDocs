@@ -44,6 +44,8 @@ import { PreviewPaneComponent } from '../../file-explorer/components/preview-pan
 import { ViewPreferenceService } from '../../file-explorer/services/view-preference.service';
 import { FileItem } from '../../file-explorer/models/file-explorer.models';
 import { MatIconModule } from '@angular/material/icon';
+import { ChecklistsComponent } from '../components/checklists/checklists.component';
+import { heroClipboardDocumentCheckSolid } from '@ng-icons/heroicons/solid';
 
 @Component({
   selector: 'app-client-workspace',
@@ -61,7 +63,8 @@ import { MatIconModule } from '@angular/material/icon';
     FileDetailsComponent,
     DetailsPaneComponent,
     PreviewPaneComponent,
-    MatIconModule
+    MatIconModule,
+    ChecklistsComponent
   ],
   providers: [
     provideIcons({
@@ -84,7 +87,8 @@ import { MatIconModule } from '@angular/material/icon';
       heroPlusSolid,
       heroArrowPathSolid,
       heroFolderPlusSolid,
-      heroEllipsisVerticalSolid
+      heroEllipsisVerticalSolid,
+      heroClipboardDocumentCheckSolid
     })
   ],
   template: `
@@ -132,6 +136,29 @@ import { MatIconModule } from '@angular/material/icon';
         </nav>
       </section>
 
+      <!-- Workspace Tabs -->
+      <div class="flex items-center gap-6 border-b border-gray-200 dark:border-gray-700 mb-6 px-2">
+        <button 
+          (click)="activeTab.set('files')"
+          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
+          [class]="activeTab() === 'files' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
+        >
+          <ng-icon name="heroFolderOpenSolid" size="18"></ng-icon>
+          Files
+        </button>
+        <button 
+          (click)="activeTab.set('checklists')"
+          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
+          [class]="activeTab() === 'checklists' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
+        >
+          <ng-icon name="heroClipboardDocumentCheckSolid" size="18"></ng-icon>
+          Checklists
+        </button>
+      </div>
+
+      @if (activeTab() === 'checklists') {
+        <app-checklists [clientId]="workspace()?.clientId || ''"></app-checklists>
+      } @else {
       <!-- Main Content Grid -->
       <div class="flex-1 grid grid-cols-12 gap-6 items-stretch min-h-0">
           <!-- Folder Tree Sidebar -->
@@ -355,6 +382,7 @@ import { MatIconModule } from '@angular/material/icon';
             </aside>
           }
         </div>
+      }
       }
 
       <!-- Rename Modal -->
@@ -681,6 +709,9 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   folderToRename = signal<FolderNode | null>(null);
   folderToDelete = signal<FolderNode | null>(null);
   newFolderName = '';
+
+  // Tab state
+  activeTab = signal<'files' | 'checklists'>('files');
 
   // Modal states aggregation for overflow control
   private isAnyModalOpen = computed(() =>

@@ -7,6 +7,8 @@ import { Log } from './log.model';
 import { Folder } from './folder.model';
 import { File } from './file.model';
 import { DocumentVersion } from './document-version.model';
+import { Checklist } from './checklist.model';
+import { ChecklistTemplate } from './checklist-template.model';
 
 // Define associations
 export const initializeAssociations = (): void => {
@@ -132,6 +134,52 @@ export const initializeAssociations = (): void => {
     foreignKey: 'createdBy',
     as: 'creator',
   });
+
+  // ========== CHECKLIST SYSTEM ASSOCIATIONS ==========
+
+  // Client -> Checklist (One-to-Many)
+  Client.hasMany(Checklist, {
+    foreignKey: 'clientId',
+    as: 'checklists',
+  });
+
+  Checklist.belongsTo(Client, {
+    foreignKey: 'clientId',
+    as: 'client',
+  });
+
+  // User -> Checklist (One-to-Many - created by)
+  User.hasMany(Checklist, {
+    foreignKey: 'createdBy',
+    as: 'createdChecklists',
+  });
+
+  Checklist.belongsTo(User, {
+    foreignKey: 'createdBy',
+    as: 'creator',
+  });
+
+  // ChecklistTemplate -> Checklist (One-to-Many)
+  ChecklistTemplate.hasMany(Checklist, {
+    foreignKey: 'templateId',
+    as: 'checklists',
+  });
+
+  Checklist.belongsTo(ChecklistTemplate, {
+    foreignKey: 'templateId',
+    as: 'template',
+  });
+
+  // User -> ChecklistTemplate (One-to-Many - created by)
+  User.hasMany(ChecklistTemplate, {
+    foreignKey: 'createdBy',
+    as: 'createdTemplates',
+  });
+
+  ChecklistTemplate.belongsTo(User, {
+    foreignKey: 'createdBy',
+    as: 'creator',
+  });
 };
 
 // Export all models
@@ -144,6 +192,8 @@ export { Log } from './log.model';
 export { Folder } from './folder.model';
 export { File } from './file.model';
 export { DocumentVersion } from './document-version.model';
+export { Checklist } from './checklist.model';
+export { ChecklistTemplate } from './checklist-template.model';
 
 // Export types
 export type { UserAttributes, UserCreationAttributes, UserRole } from './user.model';
@@ -155,3 +205,5 @@ export type { LogAttributes, LogCreationAttributes, LogAction } from './log.mode
 export type { FolderAttributes, FolderCreationAttributes, FolderType } from './folder.model';
 export type { FileAttributes, FileCreationAttributes } from './file.model';
 export type { DocumentVersionAttributes, DocumentVersionCreationAttributes } from './document-version.model';
+export type { ChecklistAttributes, ChecklistCreationAttributes, ChecklistItemData, ChecklistItemStatus } from './checklist.model';
+export type { ChecklistTemplateAttributes, ChecklistTemplateCreationAttributes, ChecklistTemplateItem, ServiceType } from './checklist-template.model';

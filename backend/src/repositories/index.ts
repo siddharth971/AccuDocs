@@ -7,3 +7,4 @@ export { logRepository } from './log.repository';
 export { folderRepository } from './folder.repository';
 export { fileRepository } from './file.repository';
 export { documentVersionRepository } from './document-version.repository';
+export { checklistRepository } from './checklist.repository';
