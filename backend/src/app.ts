@@ -29,8 +29,8 @@ const swaggerOptions = {
         description: 'Development server',
       },
       {
-        url: process.env.PUBLIC_API_URL ? `${process.env.PUBLIC_API_URL}/api/${config.apiVersion}` : `https://accudocs.onrender.com/api/${config.apiVersion}`,
-        description: 'Production server',
+        url: process.env.PUBLIC_API_URL ? `${process.env.PUBLIC_API_URL}/api/${config.apiVersion}` : `http://13.233.143.174:3000/api/${config.apiVersion}`,
+        description: 'AWS Production server',
       },
     ],
     components: {
@@ -92,19 +92,24 @@ export const createApp = (): Application => {
   }));
 
   // Security middleware - Adjusted for CORS compatibility
+  // Security middleware - Adjusted for Swagger and development flexibility
   app.use(helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
         imgSrc: ["'self'", 'data:', 'https:'],
         connectSrc: ["'self'", ...allowedOrigins],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: null, // Disable forcing HTTPS upgrades
       },
     },
     crossOriginEmbedderPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
-    crossOriginOpenerPolicy: false
+    crossOriginOpenerPolicy: false,
+    hsts: config.nodeEnv === 'production', // Only enable HSTS in production
   }));
 
   // Compression
