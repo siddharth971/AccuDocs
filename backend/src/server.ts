@@ -32,7 +32,7 @@ const startServer = async (): Promise<void> => {
 
     // Create default admin user if none exists
     try {
-      await authService.createAdmin('Admin', '+919999999999', 'Admin@123');
+      await authService.createAdmin('Admin', '9726153961', 'Admin@123');
       logger.info('✅ Default admin created');
     } catch (error) {
       // Admin already exists, which is fine

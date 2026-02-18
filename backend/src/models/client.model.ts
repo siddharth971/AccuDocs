@@ -66,7 +66,7 @@ Client.init(
       defaultValue: 'active',
     },
     metadata: {
-      type: process.env.DB_DIALECT === 'postgres' ? DataTypes.JSONB : DataTypes.JSON,
+      type: DataTypes.JSONB,
       allowNull: true,
     },
   },

@@ -61,7 +61,7 @@ User.init(
     email: {
       type: DataTypes.STRING(255),
       allowNull: true, // Allow null for now to support existing users without email
-      unique: process.env.DB_DIALECT !== 'sqlite', // SQLite has issues adding UNIQUE columns via ALTER
+      unique: true,
       validate: {
         isEmail: true,
       },

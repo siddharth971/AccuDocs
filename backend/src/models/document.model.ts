@@ -97,7 +97,7 @@ Document.init(
       field: 'current_version',
     },
     metadata: {
-      type: process.env.DB_DIALECT === 'postgres' ? DataTypes.JSONB : DataTypes.JSON,
+      type: DataTypes.JSONB,
       allowNull: true,
     },
   },

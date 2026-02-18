@@ -78,7 +78,8 @@ class MockRedis {
 }
 
 // Check if Redis is enabled
-const isRedisEnabled = process.env.REDIS_ENABLED !== 'false';
+const redisEnabled = (process.env.REDIS_ENABLED || 'false').trim().toLowerCase();
+const isRedisEnabled = redisEnabled !== 'false';
 
 export const redis = isRedisEnabled
   ? new Redis({
