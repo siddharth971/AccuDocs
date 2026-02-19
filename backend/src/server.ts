@@ -6,6 +6,7 @@ import { initializeAssociations } from './models';
 import { logger } from './utils/logger';
 import { authService, whatsappService, checklistService } from './services';
 import { socketService } from './services/socket.service';
+import { scheduler } from './config/scheduler';
 
 const startServer = async (): Promise<void> => {
   try {
@@ -64,6 +65,9 @@ const startServer = async (): Promise<void> => {
       } else {
         logger.info('⚠️ WhatsApp client initialization is disabled (WHATSAPP_ENABLED=false)');
       }
+
+      // Start reminder scheduler
+      scheduler.start();
     });
 
     // Graceful shutdown handlers
@@ -77,6 +81,7 @@ const startServer = async (): Promise<void> => {
           await disconnectDatabase();
           await disconnectRedis();
           await whatsappService.destroy();
+          scheduler.stop();
           logger.info('✅ Graceful shutdown complete');
           process.exit(0);
         } catch (error) {

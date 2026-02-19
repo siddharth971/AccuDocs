@@ -38,6 +38,12 @@ export const routes: Routes = [
         data: { roles: ['admin'] },
       },
       {
+        path: 'checklists',
+        loadComponent: () => import('./features/checklists/checklists-overview.component').then(m => m.ChecklistsOverviewComponent),
+        canActivate: [roleGuard],
+        data: { roles: ['admin'] },
+      },
+      {
         path: 'whatsapp',
         loadComponent: () => import('./features/admin/whatsapp-console/whatsapp-console.component').then(m => m.WhatsAppConsoleComponent),
         canActivate: [roleGuard],
@@ -52,6 +58,10 @@ export const routes: Routes = [
         loadComponent: () => import('./features/demo/demo.component').then(m => m.DemoComponent),
       },
     ]
+  },
+  {
+    path: 'upload/:token',
+    loadComponent: () => import('./features/public-upload/public-upload.component').then(m => m.PublicUploadComponent),
   },
   {
     path: '**',

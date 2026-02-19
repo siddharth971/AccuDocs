@@ -1,4 +1,4 @@
-import { Component, input, output, ChangeDetectionStrategy, signal, computed, inject, ElementRef, HostListener } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy, signal, computed, inject, ElementRef, HostListener, AfterViewInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
@@ -9,16 +9,17 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
   imports: [CommonModule],
   template: `
     @if (isOpen()) {
-      <!-- Backdrop -->
-      <div 
-        class="fixed inset-0 z-modal-backdrop bg-black/50 dark:bg-black/70 backdrop-blur-sm animate-fade-in"
+      <!-- Premium Backdrop -->
+      <div
+        class="modal-overlay-premium"
         (click)="onBackdropClick()"
         aria-hidden="true"
       ></div>
 
       <!-- Modal Container -->
-      <div 
-        class="fixed inset-0 z-modal overflow-y-auto"
+      <div
+        class="fixed inset-0 overflow-y-auto"
+        style="z-index: var(--z-modal);"
         role="dialog"
         [attr.aria-modal]="true"
         [attr.aria-labelledby]="title() ? modalId + '-title' : null"
@@ -26,17 +27,18 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
       >
         <div class="flex min-h-full items-center justify-center p-4">
           <!-- Modal Panel -->
-          <div 
+          <div
             [class]="modalClasses()"
             (click)="$event.stopPropagation()"
             tabindex="-1"
+            #modalPanel
           >
             <!-- Header -->
             @if (title() || showCloseButton()) {
               <header class="flex items-start justify-between gap-4 px-6 py-4 border-b border-border-color">
                 <div class="flex-1 min-w-0">
                   @if (title()) {
-                    <h2 
+                    <h2
                       [id]="modalId + '-title'"
                       class="text-xl font-semibold text-text-primary"
                     >
@@ -44,7 +46,7 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
                     </h2>
                   }
                   @if (description()) {
-                    <p 
+                    <p
                       [id]="modalId + '-desc'"
                       class="mt-1 text-sm text-text-secondary"
                     >
@@ -91,7 +93,7 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
   `],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ModalComponent {
+export class ModalComponent implements OnChanges, OnDestroy {
   private document = inject(DOCUMENT);
 
   // Inputs
@@ -111,8 +113,27 @@ export class ModalComponent {
   // Unique ID
   modalId = `modal-${Math.random().toString(36).substr(2, 9)}`;
 
+  // Track scroll position for body lock
+  private savedScrollY = 0;
+
   // Outputs
   closed = output<void>();
+
+  // Watch isOpen changes for body scroll lock
+  ngOnChanges(changes: SimpleChanges): void {
+    // Angular signals-based inputs still trigger ngOnChanges
+    // We need to check the current value
+    if (this.isOpen()) {
+      this.lockBodyScroll();
+    } else {
+      this.unlockBodyScroll();
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Always clean up body state
+    this.unlockBodyScroll();
+  }
 
   // Keyboard handler
   @HostListener('document:keydown.escape')
@@ -122,14 +143,10 @@ export class ModalComponent {
     }
   }
 
-  // Computed modal classes
+  // Computed modal classes — uses premium global styles
   modalClasses = computed(() => {
     const baseClasses = [
-      'relative w-full',
-      'bg-surface-color',
-      'rounded-xl',
-      'shadow-modal',
-      'animate-scale-in',
+      'modal-panel-premium',
       'dark:border dark:border-secondary-700',
     ].join(' ');
 
@@ -160,5 +177,20 @@ export class ModalComponent {
 
   onClose(): void {
     this.closed.emit();
+  }
+
+  // Body scroll lock helpers
+  private lockBodyScroll(): void {
+    if (this.document.body.classList.contains('modal-open')) return;
+    this.savedScrollY = window.scrollY;
+    this.document.body.classList.add('modal-open');
+    this.document.body.style.top = `-${this.savedScrollY}px`;
+  }
+
+  private unlockBodyScroll(): void {
+    if (!this.document.body.classList.contains('modal-open')) return;
+    this.document.body.classList.remove('modal-open');
+    this.document.body.style.top = '';
+    window.scrollTo(0, this.savedScrollY);
   }
 }

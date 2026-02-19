@@ -112,10 +112,35 @@ export const checklistController = {
         serviceType,
         dueDate,
         notes,
-        createdBy: (req as any).user.id,
+        createdBy: (req as any).user.userId,
         ip: req.ip,
       });
       sendCreated(res, checklist, 'Checklist created successfully');
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async bulkCreateChecklists(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { templateId, clientIds, financialYear, dueDate, sendWhatsApp } = req.body;
+
+      if (!templateId || !financialYear) {
+        res.status(400).json({ success: false, message: 'templateId and financialYear are required' });
+        return;
+      }
+
+      const result = await checklistService.bulkCreateChecklists({
+        templateId,
+        clientIds: clientIds || 'all',
+        financialYear,
+        dueDate,
+        sendWhatsApp: !!sendWhatsApp,
+        createdBy: (req as any).user.userId,
+        ip: req.ip,
+      });
+
+      sendSuccess(res, result, `Created ${result.created} checklists. Skipped ${result.skipped} (already exist).`);
     } catch (error) {
       next(error);
     }
@@ -130,6 +155,15 @@ export const checklistController = {
         req.ip
       );
       sendSuccess(res, checklist, 'Checklist updated successfully');
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async sendReminder(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      await checklistService.sendReminder(req.params.checklistId, (req as any).user.id);
+      sendSuccess(res, null, 'Reminder sent successfully');
     } catch (error) {
       next(error);
     }

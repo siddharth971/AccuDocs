@@ -216,6 +216,44 @@ router.get('/', checklistController.getChecklists);
 
 /**
  * @swagger
+ * /checklists/bulk-create:
+ *   post:
+ *     summary: Bulk create checklists for multiple clients from a template
+ *     tags: [Checklists]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - templateId
+ *               - financialYear
+ *             properties:
+ *               templateId:
+ *                 type: string
+ *               clientIds:
+ *                 oneOf:
+ *                   - type: array
+ *                     items:
+ *                       type: string
+ *                   - type: string
+ *                     enum: [all]
+ *               financialYear:
+ *                 type: string
+ *               dueDate:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       200:
+ *         description: Bulk creation result with created/skipped counts
+ */
+router.post('/bulk-create', adminOnly, checklistController.bulkCreateChecklists);
+
+/**
+ * @swagger
  * /checklists/client/{clientId}:
  *   get:
  *     summary: Get all checklists for a specific client
@@ -334,6 +372,26 @@ router.patch('/:checklistId', adminOnly, checklistController.updateChecklist);
  *         description: Checklist deleted
  */
 router.delete('/:checklistId', adminOnly, checklistController.deleteChecklist);
+
+/**
+ * @swagger
+ * /checklists/{checklistId}/reminder:
+ *   post:
+ *     summary: Send a WhatsApp reminder to the client
+ *     tags: [Checklists]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: checklistId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Reminder sent
+ */
+router.post('/:checklistId/reminder', adminOnly, checklistController.sendReminder);
 
 // ========== ITEM ROUTES ==========
 
@@ -482,4 +540,45 @@ router.patch('/:checklistId/items/bulk-update', adminOnly, checklistController.b
  */
 router.delete('/:checklistId/items/:itemId', adminOnly, checklistController.removeItem);
 
+// ========== UPLOAD/DOWNLOAD ROUTES ==========
+
+import { uploadController } from '../controllers/upload.controller';
+import multer from 'multer';
+
+const _upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024, files: 1 },
+});
+
+/**
+ * POST /checklists/:checklistId/generate-link
+ * Generate a secure upload link for a checklist
+ */
+router.post('/:checklistId/generate-link', adminOnly, uploadController.generateUploadLink);
+
+/**
+ * POST /checklists/:checklistId/items/:itemId/upload
+ * Upload a file to a checklist item (admin)
+ */
+router.post('/:checklistId/items/:itemId/upload', adminOnly, _upload.single('file'), uploadController.uploadViaAdmin);
+
+/**
+ * GET /checklists/:checklistId/download/:itemId
+ * Download a single checklist item file
+ */
+router.get('/:checklistId/download/:itemId', uploadController.downloadFile);
+
+/**
+ * GET /checklists/:checklistId/download-all
+ * Download all checklist files as ZIP
+ */
+router.get('/:checklistId/download-all', uploadController.downloadAllAsZip);
+
+/**
+ * PATCH /checklists/:checklistId/items/:itemId/status
+ * Verify or reject a checklist item
+ */
+router.patch('/:checklistId/items/:itemId/status', adminOnly, uploadController.updateItemStatus);
+
 export default router;
+

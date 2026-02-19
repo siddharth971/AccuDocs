@@ -200,6 +200,172 @@ export const checklistService = {
 
   // ========== CHECKLISTS ==========
 
+  async bulkCreateChecklists(data: {
+    templateId: string;
+    clientIds: string[] | 'all';
+    financialYear: string;
+    dueDate?: string;
+    sendWhatsApp?: boolean;
+    createdBy: string;
+    ip?: string;
+  }): Promise<{ created: number; skipped: number; total: number; whatsappSent?: number }> {
+    // Get template
+    const template = await checklistRepository.findTemplateById(data.templateId);
+    if (!template) throw new NotFoundError('Template not found');
+
+    // Get target client IDs
+    let targetClientIds: string[];
+    if (data.clientIds === 'all') {
+      targetClientIds = await checklistRepository.findAllClientIds();
+    } else {
+      targetClientIds = data.clientIds;
+    }
+
+    if (targetClientIds.length === 0) {
+      throw new BadRequestError('No clients found');
+    }
+
+    // Find clients that already have this checklist (same FY + service type)
+    const existingKeys = await checklistRepository.findExistingChecklistKeys(
+      targetClientIds,
+      data.financialYear,
+      template.serviceType
+    );
+
+    // Filter out clients that already have the checklist
+    const newClientIds = targetClientIds.filter(id => !existingKeys.has(id));
+
+    if (newClientIds.length === 0) {
+      return { created: 0, skipped: targetClientIds.length, total: targetClientIds.length };
+    }
+
+    // Prepare bulk records
+    const records = newClientIds.map(clientId => {
+      const items: ChecklistItemData[] = template.items.map((item: any) => ({
+        id: uuidv4(),
+        label: item.label,
+        description: item.description,
+        category: item.category,
+        required: item.required,
+        status: 'pending' as ChecklistItemStatus,
+      }));
+
+      return {
+        id: uuidv4(),
+        clientId,
+        templateId: data.templateId,
+        name: `${template.name} - ${data.financialYear}`,
+        financialYear: data.financialYear,
+        serviceType: template.serviceType,
+        items,
+        totalItems: items.length,
+        receivedItems: 0,
+        progress: 0,
+        status: 'active',
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        createdBy: data.createdBy,
+      };
+    });
+
+    // Batch insert using individual creates wrapped in Promise.all
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < records.length; i += BATCH_SIZE) {
+      const batch = records.slice(i, i + BATCH_SIZE);
+      await Promise.all(batch.map(record => checklistRepository.create(record)));
+    }
+
+    // Log the bulk action
+    await logRepository.create({
+      userId: data.createdBy,
+      action: 'CHECKLIST_BULK_CREATED' as any,
+      description: `Bulk created "${template.name}" checklist for ${newClientIds.length} clients (FY ${data.financialYear}). Skipped ${existingKeys.size} existing.`,
+      entityType: 'checklist',
+      ip: data.ip,
+    });
+
+    logger.info(`Bulk created ${newClientIds.length} checklists, skipped ${existingKeys.size}`);
+
+    // Send WhatsApp notifications if enabled
+    let whatsappSent = 0;
+    if (data.sendWhatsApp) {
+      try {
+        const { whatsappService } = await import('./whatsapp.service');
+
+        // Fetch client details with user (mobile number) for all new clients
+        const { clients } = await clientRepository.findAll(
+          {},
+          { page: 1, limit: 1000 }
+        );
+
+        const clientMap = new Map<string, any>();
+        clients.forEach((c: any) => {
+          clientMap.set(c.id, c);
+        });
+
+        // Build the document list from template items
+        const pendingItemsList = template.items
+          .map((item: any, idx: number) => `${idx + 1}. ${item.label}`)
+          .join('\n');
+
+        const dueDateStr = data.dueDate
+          ? `\n📅 *Due Date:* ${new Date(data.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
+          : '';
+
+        // Send messages in batches to avoid overwhelming WhatsApp
+        const WA_BATCH = 10;
+        for (let i = 0; i < newClientIds.length; i += WA_BATCH) {
+          const batch = newClientIds.slice(i, i + WA_BATCH);
+          const promises = batch.map(async (clientId) => {
+            const client = clientMap.get(clientId);
+            if (!client?.user?.mobile) return false;
+
+            const clientName = client.user.name || client.code;
+            const mobile = client.user.mobile;
+
+            const message =
+              `📋 *Document Checklist - ${template.name}*\n` +
+              `━━━━━━━━━━━━━━━━━━━━\n\n` +
+              `Dear *${clientName}*,\n\n` +
+              `We need the following documents for *FY ${data.financialYear}*:\n\n` +
+              `${pendingItemsList}\n` +
+              `${dueDateStr}\n\n` +
+              `Please send these documents at your earliest convenience.\n\n` +
+              `Thank you! 🙏\n` +
+              `_AccuDocs_`;
+
+            try {
+              await whatsappService.sendMessage(mobile, message);
+              return true;
+            } catch (err: any) {
+              logger.warn(`Failed to send WhatsApp to ${mobile}: ${err.message}`);
+              return false;
+            }
+          });
+
+          const results = await Promise.all(promises);
+          whatsappSent += results.filter(Boolean).length;
+
+          // Small delay between batches to avoid rate limiting
+          if (i + WA_BATCH < newClientIds.length) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
+
+        logger.info(`WhatsApp notifications sent to ${whatsappSent} clients`);
+      } catch (err: any) {
+        logger.error(`WhatsApp notification error: ${err.message}`);
+        // Don't fail the bulk create if WhatsApp fails
+      }
+    }
+
+    return {
+      created: newClientIds.length,
+      skipped: existingKeys.size,
+      total: targetClientIds.length,
+      whatsappSent: data.sendWhatsApp ? whatsappSent : undefined,
+    };
+  },
+
   async createChecklist(data: {
     clientId: string;
     templateId?: string;
@@ -295,6 +461,47 @@ export const checklistService = {
     }
 
     return checklistRepository.update(checklistId, updateData);
+  },
+
+  async sendReminder(checklistId: string, userId: string): Promise<void> {
+    const checklist = await checklistRepository.findById(checklistId);
+    if (!checklist) throw new NotFoundError('Checklist not found');
+
+    const checklistAny = checklist as any;
+    const pendingItems = (checklistAny.items || []).filter((i: any) => i.status === 'pending');
+
+    if (pendingItems.length === 0) {
+      throw new BadRequestError('Checklist has no pending items');
+    }
+
+    const client = checklistAny.client;
+    if (!client?.user?.mobile) {
+      throw new BadRequestError('Client has no registered mobile number');
+    }
+
+    // Calculate urgency
+    const now = new Date();
+    const dueDate = checklist.dueDate ? new Date(checklist.dueDate) : new Date();
+    const diffMs = dueDate.getTime() - now.getTime();
+    const daysUntilDue = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    // Use dynamic import to avoid circular references
+    const { reminderService } = await import('./reminder.service');
+
+    await reminderService.sendReminder({
+      checklist: checklistAny,
+      client,
+      pendingItems,
+      daysUntilDue
+    });
+
+    await logRepository.create({
+      userId,
+      action: 'CHECKLIST_REMINDER_SENT' as any,
+      description: `Sent manual WhatsApp reminder to ${client.user.name}`,
+      entityId: checklistId,
+      entityType: 'checklist'
+    });
   },
 
   async deleteChecklist(checklistId: string, userId: string, ip?: string): Promise<void> {

@@ -207,8 +207,10 @@ module.exports = {
         'slide-down': 'slideDown 0.3s ease-out',
         'slide-left': 'slideLeft 0.3s ease-out',
         'slide-right': 'slideRight 0.3s ease-out',
-        'scale-in': 'scaleIn 0.2s ease-out',
+        'scale-in': 'scaleIn 0.22s ease-out',
         'scale-out': 'scaleOut 0.2s ease-out',
+        'modal-overlay-in': 'modalOverlayIn 0.2s ease-out both',
+        'modal-panel-in': 'modalPanelIn 0.22s ease-out both',
         'spin-slow': 'spin 2s linear infinite',
         'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
         'bounce-soft': 'bounceSoft 1s ease-in-out infinite',
@@ -240,12 +242,20 @@ module.exports = {
           '100%': { transform: 'translateX(0)', opacity: '1' },
         },
         scaleIn: {
-          '0%': { transform: 'scale(0.95)', opacity: '0' },
+          '0%': { transform: 'scale(0.96)', opacity: '0' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
         scaleOut: {
           '0%': { transform: 'scale(1)', opacity: '1' },
-          '100%': { transform: 'scale(0.95)', opacity: '0' },
+          '100%': { transform: 'scale(0.96)', opacity: '0' },
+        },
+        modalOverlayIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        modalPanelIn: {
+          '0%': { transform: 'scale(0.96) translateY(8px)', opacity: '0' },
+          '100%': { transform: 'scale(1) translateY(0)', opacity: '1' },
         },
         pulseSoft: {
           '0%, 100%': { opacity: '1' },

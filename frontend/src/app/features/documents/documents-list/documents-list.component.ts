@@ -85,7 +85,7 @@ import { MatSelectModule } from '@angular/material/select';
     })
   ],
   template: `
-    <div class="h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class="h-full flex flex-col">
       <!-- Loading State -->
       @if (isLoading()) {
         <div class="py-20">
@@ -495,8 +495,12 @@ import { MatSelectModule } from '@angular/material/select';
 
       <!-- Delete Confirmation Modal -->
       @if (showDeleteModal()) {
-        <div class="fixed inset-0 bg-black/50 backdrop-blur-md z-modal-backdrop flex items-center justify-center p-4" (click)="closeDeleteModal()">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md" (click)="$event.stopPropagation()">
+        <!-- Premium Backdrop -->
+        <div class="modal-overlay-premium" (click)="closeDeleteModal()" aria-hidden="true"></div>
+
+        <!-- Modal Container -->
+        <div class="fixed inset-0 flex items-center justify-center p-4" style="z-index: var(--z-modal);" (click)="closeDeleteModal()">
+          <div class="modal-panel-premium w-full max-w-md" (click)="$event.stopPropagation()">
             <div class="p-6 border-b border-border-color">
               <h3 class="text-lg font-bold text-text-primary">Delete File</h3>
             </div>

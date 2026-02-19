@@ -113,6 +113,10 @@ export class ChecklistService {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 
+  sendReminder(checklistId: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/${checklistId}/reminder`, {});
+  }
+
   // ========== ITEMS ==========
 
   addItem(checklistId: string, item: { label: string; description?: string; required?: boolean }): Observable<any> {
@@ -142,5 +146,43 @@ export class ChecklistService {
     let params = new HttpParams();
     if (clientId) params = params.set('clientId', clientId);
     return this.http.get(`${this.baseUrl}/stats`, { params });
+  }
+
+  // ========== BULK ==========
+
+  bulkCreateChecklists(data: {
+    templateId: string;
+    clientIds: string[] | 'all';
+    financialYear: string;
+    dueDate?: string;
+    sendWhatsApp?: boolean;
+  }): Observable<{ success: boolean; data: { created: number; skipped: number; total: number; whatsappSent?: number }; message: string }> {
+    return this.http.post<any>(`${this.baseUrl}/bulk-create`, data);
+  }
+
+  getPendingSummary(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/pending`);
+  }
+
+  // ========== UPLOAD / DOWNLOAD ==========
+
+  generateUploadLink(checklistId: string): Observable<{ success: boolean; data: { token: string; url: string; expiresAt: string } }> {
+    return this.http.post<any>(`${this.baseUrl}/${checklistId}/generate-link`, {});
+  }
+
+  uploadFileForItem(checklistId: string, itemId: string, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post(`${this.baseUrl}/${checklistId}/items/${itemId}/upload`, formData);
+  }
+
+  downloadFile(checklistId: string, itemId: string): Observable<{ success: boolean; data: { url: string; fileName: string } }> {
+    return this.http.get<any>(`${this.baseUrl}/${checklistId}/download/${itemId}`);
+  }
+
+  downloadAllAsZip(checklistId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${checklistId}/download-all`, {
+      responseType: 'blob',
+    });
   }
 }

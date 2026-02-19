@@ -18,7 +18,8 @@ export type SessionState =
   | 'AWAITING_OTP'
   | 'AWAITING_CLIENT_SELECTION'
   | 'AUTHENTICATED'
-  | 'EXPLORING_FOLDER';
+  | 'EXPLORING_FOLDER'
+  | 'UPLOADING_CHECKLIST';
 
 export interface MatchingClient {
   id: string;
@@ -33,6 +34,7 @@ export interface WhatsAppSession {
   clientCode?: string;
   currentFolderId?: string;
   matchingClients?: MatchingClient[];
+  activeChecklistId?: string; // For file upload tracking
   lastActivity: number;
 }
 
@@ -377,7 +379,7 @@ export const whatsappService = {
     const from = msg.from;
     const mobile = from.replace(/\D/g, ''); // Clean number
 
-    let message = msg.body.trim().toLowerCase();
+    let message = msg.body?.trim().toLowerCase() || '';
 
     // Handle Button clicks
     if (msg.type === 'buttons_response' && msg.selectedButtonId) {
@@ -397,6 +399,11 @@ export const whatsappService = {
         state: 'INITIAL',
         lastActivity: Date.now(),
       };
+    }
+
+    // ========== HANDLE FILE/MEDIA UPLOADS ==========
+    if (msg.hasMedia && (session.state === 'AUTHENTICATED' || session.state === 'UPLOADING_CHECKLIST')) {
+      return await this.handleFileUpload(mobile, msg, session);
     }
 
     let response: any;
@@ -420,6 +427,10 @@ export const whatsappService = {
 
       case 'EXPLORING_FOLDER':
         response = await this.handleFolderExploration(mobile, message, session);
+        break;
+
+      case 'UPLOADING_CHECKLIST':
+        response = await this.handleChecklistUploadState(mobile, message, session);
         break;
 
       default:
@@ -611,12 +622,219 @@ export const whatsappService = {
       return await this.listFolderContents(mobile, rootFolder.id, session);
     }
 
+    // New: Upload documents to checklist
+    if (message === 'upload' || message === 'u' || message === '2' || message === 'upload_docs') {
+      return await this.showChecklistsForUpload(mobile, session);
+    }
+
     if (message === 'logout' || message === 'exit' || message === '0' || message === 'logout_btn') {
       await this.clearSession(mobile);
       return `👋 *Goodbye!*\n\nYou have been logged out.\n\nSend "Hi" to start a new session.`;
     }
 
     return await this.showMainMenu(mobile, session);
+  },
+
+  /**
+   * Show active checklists for upload
+   */
+  async showChecklistsForUpload(mobile: string, session: WhatsAppSession): Promise<string> {
+    try {
+      const { checklistRepository } = await import('../repositories');
+      const checklists = await checklistRepository.findByClientId(session.clientId!);
+
+      // Filter to active checklists with pending items
+      const activeChecklists = checklists.filter((c: any) =>
+        c.status === 'active' && c.items?.some((i: any) => i.status === 'pending')
+      );
+
+      if (activeChecklists.length === 0) {
+        return `✅ *No Pending Checklists*\n\nAll your document checklists are complete!\n\nType *menu* to go back.`;
+      }
+
+      let menuText = `┌─────────────────────┐\n`;
+      menuText += `│  📋 *YOUR CHECKLISTS*\n`;
+      menuText += `└─────────────────────┘\n\n`;
+      menuText += `Select a checklist to upload documents:\n\n`;
+
+      activeChecklists.forEach((checklist: any, index: number) => {
+        const pending = checklist.items?.filter((i: any) => i.status === 'pending').length || 0;
+        const total = checklist.items?.length || 0;
+        menuText += `  *${index + 1}* ▸ 📋 ${checklist.name}\n`;
+        menuText += `       _(${pending}/${total} pending)_\n`;
+      });
+
+      menuText += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+      menuText += `  *M* ◂ Main Menu\n`;
+      menuText += `━━━━━━━━━━━━━━━━━━━━\n`;
+      menuText += `_Reply with a number to select_`;
+
+      // Store checklist IDs for selection
+      await this.updateSession(mobile, {
+        state: 'UPLOADING_CHECKLIST',
+        activeChecklistId: undefined,
+        matchingClients: activeChecklists.map((c: any) => ({
+          id: c.id,
+          code: c.name,
+          name: c.financialYear,
+        })),
+      });
+
+      return menuText;
+    } catch (err: any) {
+      logger.error('Error listing checklists for upload:', err);
+      return `❌ Error loading checklists. Type *menu* to go back.`;
+    }
+  },
+
+  /**
+   * Handle checklist upload state
+   */
+  async handleChecklistUploadState(mobile: string, message: string, session: WhatsAppSession): Promise<any> {
+    if (message === 'menu' || message === 'm' || message === 'main_menu') {
+      await this.updateSession(mobile, { state: 'AUTHENTICATED', activeChecklistId: undefined });
+      return await this.showMainMenu(mobile, session);
+    }
+
+    if (message === 'back' || message === 'b') {
+      if (session.activeChecklistId) {
+        // Go back to checklist list
+        return await this.showChecklistsForUpload(mobile, session);
+      }
+      await this.updateSession(mobile, { state: 'AUTHENTICATED' });
+      return await this.showMainMenu(mobile, session);
+    }
+
+    // If no active checklist selected yet, handle selection
+    if (!session.activeChecklistId) {
+      const storedChecklists = session.matchingClients || [];
+      const selection = parseInt(message, 10);
+
+      if (!isNaN(selection) && selection >= 1 && selection <= storedChecklists.length) {
+        const selected = storedChecklists[selection - 1];
+        await this.updateSession(mobile, { activeChecklistId: selected.id });
+        return await this.showPendingItems(mobile, selected.id);
+      }
+
+      return `⚠️ Invalid selection. Enter a number or type *menu*.`;
+    }
+
+    // If done uploading
+    if (message === 'done' || message === 'd') {
+      await this.updateSession(mobile, { state: 'AUTHENTICATED', activeChecklistId: undefined });
+      return `✅ *Upload session ended.*\n\nType *menu* to return to main menu.`;
+    }
+
+    return `📎 *Send a document/photo now.*\n\nI'll automatically save it to your checklist.\n\nType *done* when finished, or *back* to go back.`;
+  },
+
+  /**
+   * Show pending items for a checklist
+   */
+  async showPendingItems(mobile: string, checklistId: string): Promise<string> {
+    try {
+      const { checklistRepository } = await import('../repositories');
+      const checklist = await checklistRepository.findById(checklistId);
+      if (!checklist) return `❌ Checklist not found.`;
+
+      const items: any[] = (checklist as any).items || [];
+      const pendingItems = items.filter((i: any) => i.status === 'pending');
+      const uploadedItems = items.filter((i: any) => i.status === 'uploaded' || i.status === 'verified');
+
+      let menuText = `┌─────────────────────┐\n`;
+      menuText += `│  📋 *${(checklist as any).name}*\n`;
+      menuText += `│  Progress: ${uploadedItems.length}/${items.length} ✅\n`;
+      menuText += `└─────────────────────┘\n\n`;
+
+      if (pendingItems.length > 0) {
+        menuText += `📌 *Still needed:*\n`;
+        pendingItems.forEach((item: any, i: number) => {
+          menuText += `  ${i + 1}. ⏳ ${item.label}\n`;
+        });
+      }
+
+      if (uploadedItems.length > 0) {
+        menuText += `\n✅ *Already received:*\n`;
+        uploadedItems.forEach((item: any) => {
+          menuText += `  ✓ ${item.label}\n`;
+        });
+      }
+
+      menuText += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+      menuText += `📎 *Send your documents now!*\n`;
+      menuText += `I'll match them to the next pending item.\n\n`;
+      menuText += `Type *done* when finished.\n`;
+      menuText += `Type *back* to choose another checklist.\n`;
+      menuText += `━━━━━━━━━━━━━━━━━━━━`;
+
+      return menuText;
+    } catch (err: any) {
+      logger.error('Error showing pending items:', err);
+      return `❌ Error loading checklist items. Type *menu*.`;
+    }
+  },
+
+  /**
+   * Handle file upload from WhatsApp
+   */
+  async handleFileUpload(mobile: string, msg: any, session: WhatsAppSession): Promise<string> {
+    try {
+      if (!session.clientId) {
+        return `❌ Please authenticate first. Send *Hi* to start.`;
+      }
+
+      // Download the media
+      const media = await msg.downloadMedia();
+      if (!media) {
+        return `❌ Could not download the file. Please try again.`;
+      }
+
+      const buffer = Buffer.from(media.data, 'base64');
+      const mimetype = media.mimetype || 'application/octet-stream';
+      const originalName = msg.body || media.filename || `document_${Date.now()}`;
+      const ext = mimetype.split('/')[1]?.split(';')[0] || 'bin';
+      const fileName = originalName.includes('.') ? originalName : `${originalName}.${ext}`;
+
+      // Find active checklist
+      let checklistId = session.activeChecklistId;
+
+      if (!checklistId) {
+        // Auto-detect: find the first active checklist for this client
+        const { checklistRepository } = await import('../repositories');
+        const checklists = await checklistRepository.findByClientId(session.clientId);
+        const active = checklists.find((c: any) =>
+          c.status === 'active' && c.items?.some((i: any) => i.status === 'pending')
+        );
+
+        if (!active) {
+          return `📎 Received your file, but you have no pending checklists.\n\nYour accountant will be notified. Type *menu* to continue.`;
+        }
+        checklistId = active.id;
+      }
+
+      // Use the upload service
+      const { uploadService } = await import('./upload.service');
+      const result = await uploadService.uploadViaWhatsApp(
+        session.clientId,
+        checklistId,
+        { originalname: fileName, buffer, mimetype, size: buffer.length },
+      );
+
+      if (!result) {
+        return `📎 Received your file, but all checklist items are already uploaded!\n\nType *done* or *menu*.`;
+      }
+
+      // Show updated progress
+      const progressMsg = await this.showPendingItems(mobile, checklistId);
+
+      return `✅ *Received: ${fileName}*\n` +
+        `Saved as: *${result.fileName}*\n\n` +
+        progressMsg;
+
+    } catch (err: any) {
+      logger.error('Error handling WhatsApp file upload:', err);
+      return `❌ Error saving your document: ${err.message}\n\nPlease try again or contact your accountant.`;
+    }
   },
 
   /**
@@ -796,9 +1014,10 @@ export const whatsappService = {
       `Welcome back! Choose an option:\n\n` +
       `┌──────────────────────┐\n` +
       `│  *1* ▸ 📁 My Documents\n` +
+      `│  *2* ▸ 📤 Upload Documents\n` +
       `│  *0* ▸ 🚪 Logout\n` +
       `└──────────────────────┘\n\n` +
-      `_Reply *1* or *0* to continue_`;
+      `_Reply *1*, *2*, or *0* to continue_`;
   },
 
   /**

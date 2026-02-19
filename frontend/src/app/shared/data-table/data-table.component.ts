@@ -5,6 +5,7 @@ import {
   Output,
   EventEmitter,
   ViewChild,
+  ElementRef,
   TemplateRef,
   signal,
   computed,
@@ -89,6 +90,12 @@ export class DataTableComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   showModal = signal(false);
   closeModalRef = this.closeModal.bind(this);
 
+  // Modal DOM reference
+  @ViewChild('modalPanel') modalPanelRef?: ElementRef<HTMLDivElement>;
+
+  // Track scroll position for body lock
+  private savedScrollY = 0;
+
   // Search Support
   @Output() search = new EventEmitter<string>();
 
@@ -153,6 +160,18 @@ export class DataTableComponent implements OnInit, OnChanges, OnDestroy, AfterVi
 
   ngOnDestroy() {
     window.removeEventListener('click', this.onClickOutside);
+    // Ensure body is unlocked if component destroyed while modal open
+    if (this.showModal()) {
+      this.unlockBodyScroll();
+    }
+  }
+
+  // Escape key closes modal
+  @HostListener('document:keydown.escape')
+  onEscapePress(): void {
+    if (this.showModal()) {
+      this.closeModal();
+    }
   }
 
   // Click Outside Listener for Column Toggle
@@ -196,19 +215,35 @@ export class DataTableComponent implements OnInit, OnChanges, OnDestroy, AfterVi
       this.formComponent = comp;
       this.initialFormData = data;
       this.showModal.set(true);
-      document.body.style.overflow = 'hidden';
-      document.body.classList.add('modal-open');
+      this.lockBodyScroll();
       this.cdr.markForCheck();
+
+      // Focus the modal panel after render
+      setTimeout(() => {
+        this.modalPanelRef?.nativeElement?.focus();
+      }, 50);
     }
   }
 
   closeModal() {
     this.showModal.set(false);
-    document.body.style.overflow = '';
-    document.body.classList.remove('modal-open');
+    this.unlockBodyScroll();
     this.initialFormData = null;
     this.modalClosed.emit();
     this.cdr.markForCheck();
+  }
+
+  // Body scroll lock helpers
+  private lockBodyScroll(): void {
+    this.savedScrollY = window.scrollY;
+    document.body.classList.add('modal-open');
+    document.body.style.top = `-${this.savedScrollY}px`;
+  }
+
+  private unlockBodyScroll(): void {
+    document.body.classList.remove('modal-open');
+    document.body.style.top = '';
+    window.scrollTo(0, this.savedScrollY);
   }
 
   onPage(event: any) {

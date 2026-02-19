@@ -85,6 +85,29 @@ export const checklistRepository = {
     return Checklist.create(data) as unknown as Promise<Checklist>;
   },
 
+  async bulkCreate(records: any[]): Promise<Checklist[]> {
+    return Checklist.bulkCreate(records, { validate: true }) as unknown as Promise<Checklist[]>;
+  },
+
+  async findAllClientIds(): Promise<string[]> {
+    const clients = await Client.findAll({ attributes: ['id'], where: { status: 'active' }, raw: true });
+    return clients.map((c: any) => c.id);
+  },
+
+  async findExistingChecklistKeys(clientIds: string[], financialYear: string, serviceType: string): Promise<Set<string>> {
+    const existing = await Checklist.findAll({
+      attributes: ['clientId'],
+      where: {
+        clientId: { [Op.in]: clientIds },
+        financialYear,
+        serviceType,
+        status: { [Op.ne]: 'archived' },
+      },
+      raw: true,
+    });
+    return new Set(existing.map((c: any) => c.clientId));
+  },
+
   async update(id: string, data: any): Promise<Checklist | null> {
     const checklist = await Checklist.findByPk(id);
     if (!checklist) return null;

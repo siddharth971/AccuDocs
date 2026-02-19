@@ -9,7 +9,8 @@ import {
   heroClockSolid,
   heroChatBubbleLeftRightSolid,
   heroCog6ToothSolid,
-  heroDocumentTextSolid
+  heroDocumentTextSolid,
+  heroClipboardDocumentCheckSolid
 } from '@ng-icons/heroicons/solid';
 import { AuthService } from '@core/services/auth.service';
 
@@ -135,7 +136,8 @@ import { AuthService } from '@core/services/auth.service';
       heroClockSolid,
       heroChatBubbleLeftRightSolid,
       heroCog6ToothSolid,
-      heroDocumentTextSolid
+      heroDocumentTextSolid,
+      heroClipboardDocumentCheckSolid
     })
   ]
 })
@@ -148,6 +150,7 @@ export class SidebarComponent {
     { label: 'Dashboard', path: '/dashboard', icon: 'heroSquares2x2Solid', exact: true, adminOnly: false },
     { label: 'Documents', path: '/documents', icon: 'heroFolderOpenSolid', exact: false, adminOnly: false },
     { label: 'Clients', path: '/clients', icon: 'heroUsersSolid', exact: false, adminOnly: true },
+    { label: 'Checklists', path: '/checklists', icon: 'heroClipboardDocumentCheckSolid', exact: false, adminOnly: true },
     { label: 'Activity Logs', path: '/logs', icon: 'heroClockSolid', exact: false, adminOnly: true },
     { label: 'WhatsApp', path: '/whatsapp', icon: 'heroChatBubbleLeftRightSolid', exact: false, adminOnly: true },
   ];

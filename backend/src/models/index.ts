@@ -9,6 +9,7 @@ import { File } from './file.model';
 import { DocumentVersion } from './document-version.model';
 import { Checklist } from './checklist.model';
 import { ChecklistTemplate } from './checklist-template.model';
+import { UploadToken } from './upload-token.model';
 
 // Define associations
 export const initializeAssociations = (): void => {
@@ -180,6 +181,30 @@ export const initializeAssociations = (): void => {
     foreignKey: 'createdBy',
     as: 'creator',
   });
+
+  // ========== UPLOAD TOKEN ASSOCIATIONS ==========
+
+  // Checklist -> UploadToken (One-to-Many)
+  Checklist.hasMany(UploadToken, {
+    foreignKey: 'checklistId',
+    as: 'uploadTokens',
+  });
+
+  UploadToken.belongsTo(Checklist, {
+    foreignKey: 'checklistId',
+    as: 'checklist',
+  });
+
+  // Client -> UploadToken (One-to-Many)
+  Client.hasMany(UploadToken, {
+    foreignKey: 'clientId',
+    as: 'uploadTokens',
+  });
+
+  UploadToken.belongsTo(Client, {
+    foreignKey: 'clientId',
+    as: 'client',
+  });
 };
 
 // Export all models
@@ -194,6 +219,7 @@ export { File } from './file.model';
 export { DocumentVersion } from './document-version.model';
 export { Checklist } from './checklist.model';
 export { ChecklistTemplate } from './checklist-template.model';
+export { UploadToken } from './upload-token.model';
 
 // Export types
 export type { UserAttributes, UserCreationAttributes, UserRole } from './user.model';
@@ -207,3 +233,4 @@ export type { FileAttributes, FileCreationAttributes } from './file.model';
 export type { DocumentVersionAttributes, DocumentVersionCreationAttributes } from './document-version.model';
 export type { ChecklistAttributes, ChecklistCreationAttributes, ChecklistItemData, ChecklistItemStatus } from './checklist.model';
 export type { ChecklistTemplateAttributes, ChecklistTemplateCreationAttributes, ChecklistTemplateItem, ServiceType } from './checklist-template.model';
+export type { UploadTokenAttributes, UploadTokenCreationAttributes } from './upload-token.model';

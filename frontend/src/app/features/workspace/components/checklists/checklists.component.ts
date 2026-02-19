@@ -156,16 +156,33 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
 
     <!-- Create Checklist Modal -->
     @if (showCreateModal) {
-      <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-        <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800">
+      <!-- Premium Backdrop -->
+      <div
+        class="modal-overlay-premium bg-slate-900/40 backdrop-blur-[2px]"
+        (click)="showCreateModal = false"
+        aria-hidden="true"
+      ></div>
+
+      <!-- Modal Container -->
+      <div
+        class="fixed inset-0 flex items-center justify-center p-4"
+        style="z-index: var(--z-modal);"
+        role="dialog"
+        aria-modal="true"
+        (click)="showCreateModal = false"
+      >
+        <div
+          class="modal-panel-premium w-full max-w-lg flex flex-col"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800 rounded-t-[24px]">
             <h3 class="text-lg font-bold text-slate-900 dark:text-white">Create New Checklist</h3>
-            <button (click)="showCreateModal = false" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
-              <ng-icon name="heroExclamationCircleSolid" class="rotate-45" size="24"></ng-icon> <!-- Close icon substitute -->
+            <button (click)="showCreateModal = false" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+              <ng-icon name="heroExclamationCircleSolid" class="rotate-45" size="24"></ng-icon>
             </button>
           </div>
           
-          <div class="p-6 space-y-5">
+          <div class="p-6 space-y-5 flex-1 overflow-y-auto custom-scrollbar">
             <div>
               <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Template</label>
               <div class="relative">
@@ -220,7 +237,7 @@ import { ChecklistDetailComponent } from '../checklist-detail/checklist-detail.c
               </div>
           </div>
 
-          <div class="p-6 pt-2 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700">
+          <div class="p-6 pt-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-b-[24px]">
             <button (click)="showCreateModal = false" class="px-5 py-2.5 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">Cancel</button>
             <button (click)="createChecklist()" 
                     [disabled]="!creationData.name"

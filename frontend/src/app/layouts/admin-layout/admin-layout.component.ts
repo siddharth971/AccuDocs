@@ -30,7 +30,7 @@ import { ToastContainerComponent } from '@shared/components/toast-container/toas
           class="flex-1 transition-all duration-300"
           style="padding-top: calc(80px + 24px); padding-left: 24px; padding-right: 24px; padding-bottom: 24px;"
         >
-          <div class="w-full animate-page-enter">
+          <div class="w-full">
             <router-outlet></router-outlet>
           </div>
         </main>

@@ -40,7 +40,7 @@ import {
     })
   ],
   template: `
-    <div class="space-y-8 animate-page-enter">
+    <div class="space-y-8">
       <!-- Page Header -->
       <div>
         <div class="flex items-center gap-2 text-[#0074c9] dark:text-blue-400 font-bold text-[11px] uppercase" style="letter-spacing: 0.12em;">

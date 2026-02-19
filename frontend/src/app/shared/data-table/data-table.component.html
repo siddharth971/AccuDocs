@@ -70,18 +70,22 @@
   </div>
 
   <!-- Modal Overlay -->
-  <div *ngIf="showModal()" class="fixed inset-0 flex items-center justify-center animate-fade-in"
-    style="background: rgba(0,0,0,0.4); backdrop-filter: blur(8px); z-index: var(--z-modal-backdrop);">
-    <div
-      class="bg-white dark:bg-[#1e293b] rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4 animate-scale-in"
-      style="box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);" (click)="$event.stopPropagation()">
-      <ng-container *ngComponentOutlet="
-            formComponent;
-            injector: formInjector;
-            inputs: { initialData: initialFormData, isModal: true, closeCallback: closeModalRef }
-          "></ng-container>
+  <ng-container *ngIf="showModal()">
+    <!-- Backdrop -->
+    <div class="modal-overlay-premium" (click)="closeModal()" aria-hidden="true"></div>
+    <!-- Modal Container -->
+    <div class="fixed inset-0 flex items-center justify-center p-4" style="z-index: var(--z-modal);" role="dialog"
+      aria-modal="true" (click)="closeModal()">
+      <div class="modal-panel-premium max-w-2xl max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()"
+        #modalPanel>
+        <ng-container *ngComponentOutlet="
+              formComponent;
+              injector: formInjector;
+              inputs: { initialData: initialFormData, isModal: true, closeCallback: closeModalRef }
+            "></ng-container>
+      </div>
     </div>
-  </div>
+  </ng-container>
 
   <!-- Datatable -->
   <div class="datatable-wrapper">

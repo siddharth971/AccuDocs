@@ -151,37 +151,43 @@ import { FormsModule } from '@angular/forms';
         </button>
       </div>
 
+      </div>
+
        <!-- Add Item Inline Form -->
        @if (showAddItem) {
-        <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
-            <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl p-6">
+        <!-- Premium Backdrop -->
+        <div class="modal-overlay-premium" (click)="showAddItem = false" aria-hidden="true"></div>
+
+        <!-- Modal Container -->
+        <div class="fixed inset-0 flex items-center justify-center p-4" style="z-index: var(--z-modal);" (click)="showAddItem = false">
+            <div class="modal-panel-premium w-full max-w-md p-6" (click)="$event.stopPropagation()">
                 <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">Add Checklist Item</h3>
                 
                 <div class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Item Name</label>
-                        <input type="text" [(ngModel)]="newItemData.label" class="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Rent Agreement">
+                        <input type="text" [(ngModel)]="newItemData.label" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400 font-medium" placeholder="e.g. Rent Agreement">
                     </div>
                     
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                        <input type="text" [(ngModel)]="newItemData.category" class="w-full p-2.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. General">
+                        <input type="text" [(ngModel)]="newItemData.category" class="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-400 font-medium" placeholder="e.g. General">
                     </div>
 
                     <div class="flex items-center gap-2">
                         <input type="checkbox" [(ngModel)]="newItemData.required" id="req" class="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500">
-                        <label for="req" class="text-sm text-slate-700 dark:text-slate-300">Required item</label>
+                        <label for="req" class="text-sm font-medium text-slate-700 dark:text-slate-300">Required item</label>
                     </div>
                 </div>
 
                 <div class="flex justify-end gap-3 mt-6">
-                    <button (click)="showAddItem = false" class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">Cancel</button>
-                    <button (click)="addItem()" [disabled]="!newItemData.label" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">Add Item</button>
+                    <button (click)="showAddItem = false" class="px-5 py-2.5 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">Cancel</button>
+                    <button (click)="addItem()" [disabled]="!newItemData.label" class="px-6 py-2.5 bg-[#0074c9] text-white font-bold rounded-xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:shadow-none hover:-translate-y-0.5 active:translate-y-0">Add Item</button>
                 </div>
             </div>
         </div>
        }
-    </div>
+    
   `,
   providers: [
     provideIcons({
