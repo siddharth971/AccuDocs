@@ -1,6 +1,111 @@
 @use '@angular/material' as mat;
 @use 'sass:color';
 
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+// ==========================================
+// CSS CUSTOM PROPERTIES (Design System)
+// ==========================================
+
+:root {
+  // Background & Surface layers
+  --color-bg: #0A0C10;
+  --color-bg-raised: #0F1318;
+  --color-surface: #141920;
+  --color-surface-hover: #1A2130;
+
+  // Borders & Dividers
+  --color-border: #1E2733;
+  --color-border-mid: #263040;
+
+  // Accent colors (hub specific)
+  --color-gold: #C9943A;
+  --color-gold-bright: #E8B04A;
+  --color-gold-faint: rgba(201, 148, 58, 0.08);
+
+  // Text colors
+  --color-text: #D8E0EA;
+  --color-text-sub: #7A8898;
+  --color-text-dim: #3D4A58;
+
+  // Semantic colors
+  --color-green: #3D9E6A;
+  --color-red: #C84B3C;
+  --color-orange: #C87C2A;
+  --color-blue: #3A7FBF;
+
+  // Typography
+  --font-sans: 'Sora', 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --font-size-base: 14px;
+  --line-height-base: 1.5;
+}
+
+// Dark mode (default)
+body.dark {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+// ==========================================
+// App Shell Layout
+// ==========================================
+
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.hub-rail {
+  width: 58px;
+  flex-shrink: 0;
+}
+
+.module-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+}
+
+.sidebar-collapsed {
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.main-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.top-bar {
+  height: 52px;
+  flex-shrink: 0;
+}
+
+.favorites-bar {
+  height: 44px;
+  flex-shrink: 0;
+}
+
+.content-area {
+  flex: 1;
+  overflow: auto;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
