@@ -27,7 +27,11 @@ export type LogAction =
   | 'WHATSAPP_MESSAGE'
   | 'TELEGRAM_MESSAGE'
   | 'ACCESS_DENIED'
-  | 'PASSWORD_CHANGED';
+  | 'PASSWORD_CHANGED'
+  | 'TASK_CREATED'
+  | 'TASK_UPDATED'
+  | 'TASK_STATUS_UPDATED'
+  | 'TASK_DELETED';
 
 export interface LogAttributes {
   id: string;

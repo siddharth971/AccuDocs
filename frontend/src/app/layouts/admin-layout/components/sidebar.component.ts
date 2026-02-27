@@ -11,7 +11,8 @@ import {
   heroCog6ToothSolid,
   heroDocumentTextSolid,
   heroClipboardDocumentCheckSolid,
-  heroCalendarDaysSolid
+  heroCalendarDaysSolid,
+  heroListBulletSolid
 } from '@ng-icons/heroicons/solid';
 import { AuthService } from '@core/services/auth.service';
 
@@ -139,7 +140,8 @@ import { AuthService } from '@core/services/auth.service';
       heroCog6ToothSolid,
       heroDocumentTextSolid,
       heroClipboardDocumentCheckSolid,
-      heroCalendarDaysSolid
+      heroCalendarDaysSolid,
+      heroListBulletSolid
     })
   ]
 })
@@ -151,7 +153,9 @@ export class SidebarComponent {
   navLinks = [
     { label: 'Dashboard', path: '/dashboard', icon: 'heroSquares2x2Solid', exact: true, adminOnly: false },
     { label: 'Documents', path: '/documents', icon: 'heroFolderOpenSolid', exact: false, adminOnly: false },
+    { label: 'Tasks', path: '/tasks', icon: 'heroListBulletSolid', exact: false, adminOnly: false },
     { label: 'Clients', path: '/clients', icon: 'heroUsersSolid', exact: false, adminOnly: true },
+    { label: 'Staff', path: '/staff', icon: 'heroUsersSolid', exact: false, adminOnly: true },
     { label: 'Checklists', path: '/checklists', icon: 'heroClipboardDocumentCheckSolid', exact: false, adminOnly: true },
     { label: 'Compliance', path: '/compliance', icon: 'heroCalendarDaysSolid', exact: false, adminOnly: true },
     { label: 'Activity Logs', path: '/logs', icon: 'heroClockSolid', exact: false, adminOnly: true },

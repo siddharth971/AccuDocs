@@ -69,9 +69,9 @@ export class SequelizeUserRepository implements IUserRepository {
 
     if (filters.search) {
       where[Op.or] = [
-        { name: { [Op.like]: `%${filters.search}%` } },
-        { mobile: { [Op.like]: `%${filters.search}%` } },
-        { email: { [Op.like]: `%${filters.search}%` } }
+        { name: { [Op.iLike]: `%${filters.search}%` } },
+        { mobile: { [Op.iLike]: `%${filters.search}%` } },
+        { email: { [Op.iLike]: `%${filters.search}%` } }
       ];
     }
 
@@ -80,7 +80,7 @@ export class SequelizeUserRepository implements IUserRepository {
     }
 
     if (filters.isActive !== undefined) {
-      where.is_active = filters.isActive;
+      where.isActive = filters.isActive;
     }
 
     const { rows, count } = await UserModel.findAndCountAll({

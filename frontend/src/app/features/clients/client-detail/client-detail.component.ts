@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -6,10 +6,12 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatMenuModule } from '@angular/material/menu';
 import { ClientService, Client } from '@core/services/client.service';
 import { NotificationService } from '@core/services/notification.service';
+import { TaskFormComponent } from '@app/features/tasks/task-form/task-form.component';
 
 @Component({
   selector: 'app-client-detail',
   standalone: true,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   imports: [
     CommonModule,
     RouterLink,
@@ -56,6 +58,10 @@ import { NotificationService } from '@core/services/notification.service';
               <mat-icon class="text-lg">edit</mat-icon>
               Edit
             </a>
+            <button class="btn-secondary" (click)="openQuickAddTask()">
+              <mat-icon class="text-lg">task_alt</mat-icon>
+              Add Task
+            </button>
             <button 
               [matMenuTriggerFor]="menu"
               class="btn-icon border border-border-color"
@@ -135,6 +141,14 @@ import { NotificationService } from '@core/services/notification.service';
         </div>
       }
     </div>
+
+    <!-- Quick Add Task Form -->
+    <app-task-form
+      [visible]="showQuickAddTask()"
+      [clientId]="client()?.id || null"
+      (visibleChange)="onTaskFormVisibilityChange($event)"
+      (onSave)="handleTaskSave()"
+    ></app-task-form>
   `,
   styles: [``],
 })
@@ -146,6 +160,7 @@ export class ClientDetailComponent implements OnInit {
 
   client = signal<Client | null>(null);
   isLoading = signal(true);
+  showQuickAddTask = signal(false);
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -180,5 +195,17 @@ export class ClientDetailComponent implements OnInit {
         this.loadClient(c.id);
       },
     });
+  }
+
+  openQuickAddTask(): void {
+    this.showQuickAddTask.set(true);
+  }
+
+  handleTaskSave(): void {
+    this.showQuickAddTask.set(false);
+  }
+
+  onTaskFormVisibilityChange(visible: any): void {
+    this.showQuickAddTask.set(visible === true || visible === 'true');
   }
 }

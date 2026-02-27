@@ -12,6 +12,7 @@ import { ChecklistTemplate } from './checklist-template.model';
 import { UploadToken } from './upload-token.model';
 import { ComplianceDeadline } from './compliance-deadline.model';
 import { ClientDeadline } from './client-deadline.model';
+import { Task } from './task.model';
 
 // Define associations
 export const initializeAssociations = (): void => {
@@ -231,6 +232,41 @@ export const initializeAssociations = (): void => {
     foreignKey: 'clientId',
     as: 'client',
   });
+
+  // ========== TASK SYSTEM ASSOCIATIONS ==========
+
+  // User -> Task (One-to-Many - created by)
+  User.hasMany(Task, {
+    foreignKey: 'createdBy',
+    as: 'createdTasks',
+  });
+
+  Task.belongsTo(User, {
+    foreignKey: 'createdBy',
+    as: 'creator',
+  });
+
+  // User -> Task (One-to-Many - assigned to)
+  User.hasMany(Task, {
+    foreignKey: 'assignedTo',
+    as: 'assignedTasks',
+  });
+
+  Task.belongsTo(User, {
+    foreignKey: 'assignedTo',
+    as: 'assignee',
+  });
+
+  // Client -> Task (One-to-Many)
+  Client.hasMany(Task, {
+    foreignKey: 'clientId',
+    as: 'tasks',
+  });
+
+  Task.belongsTo(Client, {
+    foreignKey: 'clientId',
+    as: 'client',
+  });
 };
 
 // Export all models
@@ -248,6 +284,7 @@ export { ChecklistTemplate } from './checklist-template.model';
 export { UploadToken } from './upload-token.model';
 export { ComplianceDeadline } from './compliance-deadline.model';
 export { ClientDeadline } from './client-deadline.model';
+export { Task } from './task.model';
 
 // Export types
 export type { UserAttributes, UserCreationAttributes, UserRole } from './user.model';
@@ -264,3 +301,4 @@ export type { ChecklistTemplateAttributes, ChecklistTemplateCreationAttributes, 
 export type { UploadTokenAttributes, UploadTokenCreationAttributes } from './upload-token.model';
 export type { ComplianceDeadlineAttributes, ComplianceDeadlineCreationAttributes, DeadlineType } from './compliance-deadline.model';
 export type { ClientDeadlineAttributes, ClientDeadlineCreationAttributes, ClientDeadlineStatus } from './client-deadline.model';
+export type { TaskAttributes, TaskCreationAttributes, TaskPriority, TaskStatus } from './task.model';

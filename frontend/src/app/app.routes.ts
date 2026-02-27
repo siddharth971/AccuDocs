@@ -60,6 +60,16 @@ export const routes: Routes = [
         loadChildren: () => import('./features/workspace/workspace.routes').then((m) => m.WORKSPACE_ROUTES),
       },
       {
+        path: 'staff',
+        loadChildren: () => import('./features/staff/staff.routes').then((m) => m.STAFF_ROUTES),
+        canActivate: [roleGuard],
+        data: { roles: ['admin'] },
+      },
+      {
+        path: 'tasks',
+        loadChildren: () => import('./features/tasks/tasks.routes').then((m) => m.TASKS_ROUTES),
+      },
+      {
         path: 'demo',
         loadComponent: () => import('./features/demo/demo.component').then(m => m.DemoComponent),
       },

@@ -58,7 +58,13 @@ export class UserController {
       const result = await this.userService.getAllUsers(filters, pagination);
       res.status(200).json({
         success: true,
-        ...result
+        data: result.users,
+        meta: {
+          page: pagination.page,
+          limit: pagination.limit,
+          total: result.total,
+          totalPages: Math.ceil(result.total / pagination.limit)
+        }
       });
     } catch (error) {
       next(error);

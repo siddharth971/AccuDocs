@@ -1,6 +1,6 @@
 
 import { container } from "tsyringe";
-import { SequelizeUserRepository } from "../modules/auth/infrastructure/repositories/SequelizeUserRepository";
+import { SequelizeUserRepository } from "../modules/user/infrastructure/repositories/SequelizeUserRepository";
 import { SequelizeOtpRepository } from "../modules/auth/infrastructure/repositories/SequelizeOtpRepository";
 import { WhatsAppServiceAdapter } from "../modules/notification/infrastructure/WhatsAppServiceAdapter";
 

@@ -6,4 +6,5 @@ export * as whatsappController from './whatsapp.controller';
 export { workspaceController } from './workspace.controller';
 export { checklistController } from './checklist.controller';
 export { complianceController } from './compliance.controller';
+export * as taskController from './task.controller';
 

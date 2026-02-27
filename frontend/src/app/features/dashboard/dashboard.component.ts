@@ -12,6 +12,7 @@ import { StatsGridComponent } from './components/stats-grid.component';
 import { RecentActivityComponent } from './components/recent-activity.component';
 import { QuickInsightsComponent } from './components/quick-insights.component';
 import { DeadlineWidgetComponent } from './components/deadline-widget.component';
+import { TasksWidgetComponent } from './widgets/tasks-widget.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,7 +23,8 @@ import { DeadlineWidgetComponent } from './components/deadline-widget.component'
     StatsGridComponent,
     RecentActivityComponent,
     QuickInsightsComponent,
-    DeadlineWidgetComponent
+    DeadlineWidgetComponent,
+    TasksWidgetComponent
   ],
   template: `
     <div class="animate-page-enter">
@@ -51,6 +53,7 @@ import { DeadlineWidgetComponent } from './components/deadline-widget.component'
             @if (authService.isAdmin()) {
               <app-deadline-widget></app-deadline-widget>
             }
+            <app-tasks-widget></app-tasks-widget>
             <app-quick-insights></app-quick-insights>
          </div>
       </div>
