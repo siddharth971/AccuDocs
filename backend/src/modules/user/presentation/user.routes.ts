@@ -3,7 +3,7 @@ import { container } from 'tsyringe';
 import { UserController } from './controllers/UserController';
 import { UserService } from '../application/services/UserService';
 import { authenticate, adminOnly, validateBody, validateQuery } from '../../../middlewares';
-import { createUserSchema, updateUserSchema, paginationSchema } from '../../../utils/validators';
+import { createUserSchema, updateUserSchema, userFilterSchema } from '../../../utils/validators';
 import { SequelizeUserRepository } from '../infrastructure/repositories/SequelizeUserRepository';
 
 // Register Dependencies for this module
@@ -18,7 +18,7 @@ const userController = new UserController(userService);
 router.use(authenticate, adminOnly);
 
 router.post('/', validateBody(createUserSchema), (req, res, next) => userController.createUser(req, res, next));
-router.get('/', validateQuery(paginationSchema), (req, res, next) => userController.getAllUsers(req, res, next));
+router.get('/', validateQuery(userFilterSchema), (req, res, next) => userController.getAllUsers(req, res, next));
 router.get('/:id', (req, res, next) => userController.getUserById(req, res, next));
 router.put('/:id', validateBody(updateUserSchema), (req, res, next) => userController.updateUser(req, res, next));
 router.delete('/:id', (req, res, next) => userController.deleteUser(req, res, next));

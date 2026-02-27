@@ -74,9 +74,11 @@ import {
       >
         <!-- Filters Slot -->
         <div class="flex items-center gap-2" filters>
-          <select class="h-[40px] px-4 bg-[#f8fafc] dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl text-sm font-medium text-slate-600 dark:text-slate-300 outline-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer focus:ring-2 focus:ring-[#0074c9]/20 focus:border-[#0074c9]">
-            <option>All Roles</option>
-            <option>Admin</option>
+          <select 
+            [ngModel]="facade.roleFilter()" 
+            (ngModelChange)="onRoleChange($event)"
+            class="h-[40px] px-4 bg-[#f8fafc] dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl text-sm font-medium text-slate-600 dark:text-slate-300 outline-none hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer focus:ring-2 focus:ring-[#0074c9]/20 focus:border-[#0074c9]">
+            <option value="admin">Admin Only</option>
           </select>
         </div>
       </app-data-table>
@@ -99,7 +101,7 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffListComponent {
-  facade = inject(StaffFacade);
+  facade: StaffFacade = inject(StaffFacade);
   staffFormComponent = StaffFormComponent;
 
   actionsTpl = viewChild.required<TemplateRef<any>>('actionsTemplate');
@@ -115,15 +117,23 @@ export class StaffListComponent {
     ];
   }
 
-  onAdd() {
+  onRoleChange(role: string): void {
+    if (role === 'admin') {
+      this.facade.roleFilter.set('admin');
+    }
+    this.facade.pageIndex.set(0);
+    this.facade.reload();
+  }
+
+  onAdd(): void {
     this.dataTable?.openModalWithType('add');
   }
 
-  onEdit(row: any) {
+  onEdit(row: any): void {
     this.dataTable?.openModalWithType('edit', row);
   }
 
-  getRowClass = (row: any) => {
+  getRowClass = (row: any): string => {
     const classes = ['border-primary', 'border-success', 'border-warning', 'border-danger', 'border-info'];
     const idVal = row.id ? (typeof row.id === 'number' ? row.id : row.id.charCodeAt(row.id.length - 1)) : 0;
     return classes[idVal % classes.length];

@@ -60,6 +60,15 @@ export const updateUserSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+export const userFilterSchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(1000).default(10),
+  search: z.string().optional(),
+  role: z.string().optional(),
+  isActive: z.string().optional()
+});
+
+
 // Year schemas
 export const createYearSchema = z.object({
   year: z.string().regex(patterns.year, 'Year must be between 2021 and 2030'),
