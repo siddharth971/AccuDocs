@@ -50,6 +50,12 @@ export const routes: Routes = [
         data: { roles: ['admin'] },
       },
       {
+        path: 'compliance',
+        loadComponent: () => import('./features/compliance-calendar/compliance-calendar.component').then(m => m.ComplianceCalendarComponent),
+        canActivate: [roleGuard],
+        data: { roles: ['admin'] },
+      },
+      {
         path: 'workspace',
         loadChildren: () => import('./features/workspace/workspace.routes').then((m) => m.WORKSPACE_ROUTES),
       },

@@ -8,3 +8,4 @@ export { folderRepository } from './folder.repository';
 export { fileRepository } from './file.repository';
 export { documentVersionRepository } from './document-version.repository';
 export { checklistRepository } from './checklist.repository';
+export { complianceRepository } from './compliance.repository';

@@ -45,7 +45,8 @@ import { ViewPreferenceService } from '../../file-explorer/services/view-prefere
 import { FileItem } from '../../file-explorer/models/file-explorer.models';
 import { MatIconModule } from '@angular/material/icon';
 import { ChecklistsComponent } from '../components/checklists/checklists.component';
-import { heroClipboardDocumentCheckSolid } from '@ng-icons/heroicons/solid';
+import { ClientDeadlinesComponent } from '../components/client-deadlines/client-deadlines.component';
+import { heroClipboardDocumentCheckSolid, heroCalendarSolid } from '@ng-icons/heroicons/solid';
 
 @Component({
   selector: 'app-client-workspace',
@@ -64,7 +65,8 @@ import { heroClipboardDocumentCheckSolid } from '@ng-icons/heroicons/solid';
     DetailsPaneComponent,
     PreviewPaneComponent,
     MatIconModule,
-    ChecklistsComponent
+    ChecklistsComponent,
+    ClientDeadlinesComponent
   ],
   providers: [
     provideIcons({
@@ -88,7 +90,8 @@ import { heroClipboardDocumentCheckSolid } from '@ng-icons/heroicons/solid';
       heroArrowPathSolid,
       heroFolderPlusSolid,
       heroEllipsisVerticalSolid,
-      heroClipboardDocumentCheckSolid
+      heroClipboardDocumentCheckSolid,
+      heroCalendarSolid
     })
   ],
   template: `
@@ -154,10 +157,20 @@ import { heroClipboardDocumentCheckSolid } from '@ng-icons/heroicons/solid';
           <ng-icon name="heroClipboardDocumentCheckSolid" size="18"></ng-icon>
           Checklists
         </button>
+        <button 
+          (click)="activeTab.set('deadlines')"
+          class="pb-3 text-sm font-bold flex items-center gap-2 border-b-2 transition-colors"
+          [class]="activeTab() === 'deadlines' ? 'text-primary-600 border-primary-600' : 'text-gray-500 border-transparent hover:text-gray-700'"
+        >
+          <ng-icon name="heroCalendarSolid" size="18"></ng-icon>
+          Deadlines
+        </button>
       </div>
 
       @if (activeTab() === 'checklists') {
         <app-checklists [clientId]="workspace()?.clientId || ''"></app-checklists>
+      } @else if (activeTab() === 'deadlines') {
+        <app-client-deadlines [clientId]="workspace()?.clientId || ''"></app-client-deadlines>
       } @else {
       <!-- Main Content Grid -->
       <div class="flex-1 grid grid-cols-12 gap-6 items-stretch min-h-0">
@@ -727,7 +740,7 @@ export class ClientWorkspaceComponent implements OnInit, OnDestroy {
   newFolderName = '';
 
   // Tab state
-  activeTab = signal<'files' | 'checklists'>('files');
+  activeTab = signal<'files' | 'checklists' | 'deadlines'>('files');
 
   // Modal states aggregation for overflow control
   private isAnyModalOpen = computed(() =>

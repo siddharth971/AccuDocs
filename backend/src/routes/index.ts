@@ -11,6 +11,7 @@ import moduleAuthRoutes from '../modules/auth/presentation/auth.routes';
 import userRoutes from '../modules/user/presentation/user.routes';
 import checklistRoutes from './checklist.routes';
 import uploadRoutes from './upload.routes';
+import complianceRoutes from './compliance.routes';
 
 const router = Router();
 
@@ -36,6 +37,7 @@ router.use('/telegram', telegramRoutes);
 router.use('/workspace', workspaceRoutes);
 router.use('/checklists', checklistRoutes);
 router.use('/upload', uploadRoutes); // Public upload routes (token-based, no auth)
+router.use('/compliance', complianceRoutes);
 
 export default router;
 

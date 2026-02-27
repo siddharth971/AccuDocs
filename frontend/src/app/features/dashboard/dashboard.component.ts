@@ -11,6 +11,7 @@ import { WelcomeHeaderComponent } from './components/welcome-header.component';
 import { StatsGridComponent } from './components/stats-grid.component';
 import { RecentActivityComponent } from './components/recent-activity.component';
 import { QuickInsightsComponent } from './components/quick-insights.component';
+import { DeadlineWidgetComponent } from './components/deadline-widget.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -20,7 +21,8 @@ import { QuickInsightsComponent } from './components/quick-insights.component';
     WelcomeHeaderComponent,
     StatsGridComponent,
     RecentActivityComponent,
-    QuickInsightsComponent
+    QuickInsightsComponent,
+    DeadlineWidgetComponent
   ],
   template: `
     <div class="animate-page-enter">
@@ -45,7 +47,10 @@ import { QuickInsightsComponent } from './components/quick-insights.component';
          </div>
 
          <!-- Insights Sidebar (4/12) -->
-         <div class="lg:col-span-4">
+         <div class="lg:col-span-4 space-y-6">
+            @if (authService.isAdmin()) {
+              <app-deadline-widget></app-deadline-widget>
+            }
             <app-quick-insights></app-quick-insights>
          </div>
       </div>

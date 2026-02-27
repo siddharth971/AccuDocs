@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { NotificationService } from '@core/services/notification.service';
 import { z } from 'zod';
 import { createFormState } from '@shared/utils/validation.util';
@@ -16,6 +16,7 @@ type LoginData = z.infer<typeof LoginSchema>;
 export class LoginFacade {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private notification = inject(NotificationService);
 
   form = createFormState<LoginData>({ mobile: '', password: '' }, LoginSchema);
@@ -30,7 +31,11 @@ export class LoginFacade {
     this.authService.adminLogin(mobile, password).subscribe({
       next: () => {
         this.notification.success('Login successful!');
-        this.router.navigate(['/dashboard']);
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+        this.router.navigateByUrl(returnUrl).catch(err => {
+          console.error('Redirect failed:', err);
+          this.router.navigate(['/dashboard']);
+        });
       },
       error: (err) => {
         this.notification.error(err.message || 'Login failed');

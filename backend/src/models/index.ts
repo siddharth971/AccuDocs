@@ -10,6 +10,8 @@ import { DocumentVersion } from './document-version.model';
 import { Checklist } from './checklist.model';
 import { ChecklistTemplate } from './checklist-template.model';
 import { UploadToken } from './upload-token.model';
+import { ComplianceDeadline } from './compliance-deadline.model';
+import { ClientDeadline } from './client-deadline.model';
 
 // Define associations
 export const initializeAssociations = (): void => {
@@ -205,6 +207,30 @@ export const initializeAssociations = (): void => {
     foreignKey: 'clientId',
     as: 'client',
   });
+
+  // ========== COMPLIANCE CALENDAR ASSOCIATIONS ==========
+
+  // ComplianceDeadline -> ClientDeadline (One-to-Many)
+  ComplianceDeadline.hasMany(ClientDeadline, {
+    foreignKey: 'deadlineId',
+    as: 'clientDeadlines',
+  });
+
+  ClientDeadline.belongsTo(ComplianceDeadline, {
+    foreignKey: 'deadlineId',
+    as: 'deadline',
+  });
+
+  // Client -> ClientDeadline (One-to-Many)
+  Client.hasMany(ClientDeadline, {
+    foreignKey: 'clientId',
+    as: 'clientDeadlines',
+  });
+
+  ClientDeadline.belongsTo(Client, {
+    foreignKey: 'clientId',
+    as: 'client',
+  });
 };
 
 // Export all models
@@ -220,6 +246,8 @@ export { DocumentVersion } from './document-version.model';
 export { Checklist } from './checklist.model';
 export { ChecklistTemplate } from './checklist-template.model';
 export { UploadToken } from './upload-token.model';
+export { ComplianceDeadline } from './compliance-deadline.model';
+export { ClientDeadline } from './client-deadline.model';
 
 // Export types
 export type { UserAttributes, UserCreationAttributes, UserRole } from './user.model';
@@ -234,3 +262,5 @@ export type { DocumentVersionAttributes, DocumentVersionCreationAttributes } fro
 export type { ChecklistAttributes, ChecklistCreationAttributes, ChecklistItemData, ChecklistItemStatus } from './checklist.model';
 export type { ChecklistTemplateAttributes, ChecklistTemplateCreationAttributes, ChecklistTemplateItem, ServiceType } from './checklist-template.model';
 export type { UploadTokenAttributes, UploadTokenCreationAttributes } from './upload-token.model';
+export type { ComplianceDeadlineAttributes, ComplianceDeadlineCreationAttributes, DeadlineType } from './compliance-deadline.model';
+export type { ClientDeadlineAttributes, ClientDeadlineCreationAttributes, ClientDeadlineStatus } from './client-deadline.model';

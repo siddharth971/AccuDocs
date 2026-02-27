@@ -4,7 +4,7 @@ import { createApp } from './app';
 import { config, validateConfig, connectDatabase, connectRedis, disconnectDatabase, disconnectRedis } from './config';
 import { initializeAssociations } from './models';
 import { logger } from './utils/logger';
-import { authService, whatsappService, checklistService } from './services';
+import { authService, whatsappService, checklistService, complianceService } from './services';
 import { socketService } from './services/socket.service';
 import { scheduler } from './config/scheduler';
 
@@ -46,6 +46,14 @@ const startServer = async (): Promise<void> => {
       logger.info('✅ Checklist templates ready');
     } catch (error) {
       logger.warn('⚠️ Failed to seed checklist templates:', error);
+    }
+
+    // Seed compliance calendar deadlines
+    try {
+      await complianceService.seedDeadlines();
+      logger.info('✅ Compliance calendar ready');
+    } catch (error) {
+      logger.warn('⚠️ Failed to seed compliance deadlines:', error);
     }
 
     // Create and start Express app
