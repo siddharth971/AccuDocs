@@ -70,3 +70,14 @@ export const getChats = asyncHandler(async (req: Request, res: Response) => {
   const chats = await whatsappService.getChats();
   sendSuccess(res, chats);
 });
+
+/**
+ * Get messages for a specific chat
+ * GET /whatsapp/chats/:chatId/messages
+ */
+export const getChatMessages = asyncHandler(async (req: Request, res: Response) => {
+  const { chatId } = req.params;
+  const limit = parseInt(req.query.limit as string) || 50;
+  const messages = await whatsappService.getChatMessages(chatId, limit);
+  sendSuccess(res, messages);
+});

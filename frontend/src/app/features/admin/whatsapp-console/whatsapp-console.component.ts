@@ -1,5 +1,5 @@
 
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ViewEncapsulation, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { WhatsAppService, WhatsAppSession, WhatsAppStatus } from '@core/services/whatsapp.service';
@@ -16,6 +16,42 @@ import { Subscription } from 'rxjs';
   imports: [CommonModule, ReactiveFormsModule, NgIconComponent],
   templateUrl: './whatsapp-console.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  encapsulation: ViewEncapsulation.None,
+  styles: [`
+    app-whatsapp-console {
+      display: block;
+      height: 100%;
+    }
+    .wa-chat-body {
+      overflow-y: auto !important;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.3) transparent;
+    }
+    .wa-chat-body::-webkit-scrollbar {
+      width: 8px;
+    }
+    .wa-chat-body::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.05);
+      border-radius: 4px;
+    }
+    .wa-chat-body::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.25);
+      border-radius: 4px;
+      border: 1px solid transparent;
+    }
+    .wa-chat-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(0,0,0,0.4);
+    }
+    .dark .wa-chat-body::-webkit-scrollbar-track {
+      background: rgba(255,255,255,0.05);
+    }
+    .dark .wa-chat-body::-webkit-scrollbar-thumb {
+      background: rgba(255,255,255,0.2);
+    }
+    .dark .wa-chat-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(255,255,255,0.35);
+    }
+  `],
   providers: [
     provideIcons({
       heroPaperAirplaneSolid,
@@ -55,7 +91,7 @@ export class WhatsAppConsoleComponent implements OnInit, OnDestroy {
   // Store messages per chat ID
   messageMap = new Map<string, { from: string, body: string, timestamp: number }[]>();
   // Current active messages to display
-  messages = signal<{ from: string, body: string, timestamp: number }[]>([]);
+  messages = signal<{ from: string, body: string, timestamp: number, fromMe?: boolean }[]>([]);
 
   // Chats List
   chats = signal<any[]>([]);
@@ -188,10 +224,20 @@ export class WhatsAppConsoleComponent implements OnInit, OnDestroy {
     const mobile = chat.id.replace('@c.us', '').replace('@g.us', '');
     this.form.patchValue({ mobile });
 
-    // In a real app, we would fetch message history for this chat here.
-    // For now, we start with an empty or in-memory list.
-    const history = this.messageMap.get(chat.id) || [];
-    this.messages.set(history);
+    // Show cached messages immediately, then fetch from API
+    const cached = this.messageMap.get(chat.id) || [];
+    this.messages.set(cached);
+
+    // Fetch actual message history from WhatsApp
+    this.whatsappService.getChatMessages(chat.id).subscribe({
+      next: (msgs) => {
+        this.messageMap.set(chat.id, msgs);
+        this.messages.set(msgs);
+      },
+      error: (err) => {
+        console.error('Failed to load chat messages', err);
+      }
+    });
   }
 
   updateChatMessages(chatId: string, msg: any) {

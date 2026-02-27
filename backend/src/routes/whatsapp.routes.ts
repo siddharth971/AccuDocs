@@ -139,4 +139,29 @@ router.post('/logout', whatsappController.logout);
  */
 router.get('/chats', whatsappController.getChats);
 
+/**
+ * @swagger
+ * /whatsapp/chats/{chatId}/messages:
+ *   get:
+ *     summary: Get messages for a specific chat
+ *     tags: [WhatsApp]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: chatId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *     responses:
+ *       200:
+ *         description: List of messages
+ */
+router.get('/chats/:chatId/messages', whatsappController.getChatMessages);
+
 export default router;

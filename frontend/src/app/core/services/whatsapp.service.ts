@@ -68,4 +68,12 @@ export class WhatsAppService {
       map(response => response.data)
     );
   }
+
+  getChatMessages(chatId: string, limit: number = 50): Observable<any[]> {
+    return this.http.get<any>(`${this.apiUrl}/chats/${encodeURIComponent(chatId)}/messages`, {
+      params: { limit: limit.toString() }
+    }).pipe(
+      map(response => response.data)
+    );
+  }
 }

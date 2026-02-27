@@ -42,6 +42,7 @@ let client: Client | undefined;
 let MessageMedia: typeof MessageMediaType;
 let currentQR: string | null = null;
 let connectionStatus: 'INITIALIZING' | 'QR_READY' | 'AUTHENTICATED' | 'DISCONNECTED' = 'DISCONNECTED';
+let readyTimestamp: number = 0; // Tracks when the bot came online to ignore old messages
 
 const setupClientEvents = () => {
   if (!client) return;
@@ -61,6 +62,7 @@ const setupClientEvents = () => {
     logger.info('✅ WhatsApp Client is ready!');
     currentQR = null;
     connectionStatus = 'AUTHENTICATED';
+    readyTimestamp = Math.floor(Date.now() / 1000); // Mark when bot came online
 
     socketService.emit('whatsapp:status', { status: connectionStatus });
     socketService.emit('whatsapp:log', 'WhatsApp Client is ready!');
@@ -78,6 +80,7 @@ const setupClientEvents = () => {
   client.on('auth_failure', (msg) => {
     logger.error('❌ WhatsApp Authentication failure:', msg);
     connectionStatus = 'DISCONNECTED';
+    readyTimestamp = 0;
 
     socketService.emit('whatsapp:status', { status: connectionStatus });
     socketService.emit('whatsapp:log', `Authentication failed: ${msg}`);
@@ -87,6 +90,7 @@ const setupClientEvents = () => {
     logger.warn('⚠️ WhatsApp Client disconnected:', reason);
     connectionStatus = 'DISCONNECTED';
     currentQR = null;
+    readyTimestamp = 0;
 
     socketService.emit('whatsapp:status', { status: connectionStatus });
     socketService.emit('whatsapp:log', `Client disconnected: ${reason}`);
@@ -95,6 +99,35 @@ const setupClientEvents = () => {
   client.on('message', async (msg) => {
     try {
       if (msg.from.includes('@g.us')) return; // Ignore group messages
+
+      // ── Ignore old/queued messages from before the bot came online ──
+      if (readyTimestamp > 0 && msg.timestamp < readyTimestamp) {
+        logger.debug(`Skipping old message from ${msg.from} (msg time: ${msg.timestamp}, bot ready: ${readyTimestamp})`);
+        return;
+      }
+
+      // ── Only reply to registered client numbers ──
+      const senderNumber = msg.from.replace(/\D/g, ''); // e.g. "919876543210"
+      const users = await User.findAll({
+        attributes: ['mobile'],
+        where: {
+          role: 'client',
+          isActive: true
+        } as any
+      });
+
+      const isRegisteredClient = users.some((user: any) => {
+        const normalized = user.mobile.replace(/\D/g, '');
+        return normalized === senderNumber ||
+          `91${normalized}` === senderNumber ||
+          normalized === `91${senderNumber}` ||
+          senderNumber.endsWith(normalized);
+      });
+
+      if (!isRegisteredClient) {
+        logger.debug(`Ignoring message from unregistered number: ${msg.from}`);
+        return;
+      }
 
       socketService.emit('whatsapp:message', {
         from: msg.from,
@@ -214,6 +247,33 @@ export const whatsappService = {
 
     } catch (error) {
       logger.error('Failed to get chats:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get messages for a specific chat
+   */
+  async getChatMessages(chatId: string, limit: number = 50) {
+    if (!client || connectionStatus !== 'AUTHENTICATED') {
+      return [];
+    }
+    try {
+      const chat = await client.getChatById(chatId);
+      if (!chat) return [];
+
+      const messages = await chat.fetchMessages({ limit });
+
+      return messages.map((msg: any) => ({
+        from: msg.fromMe ? 'Bot' : msg.from,
+        body: msg.body || (msg.hasMedia ? '[Media]' : ''),
+        timestamp: msg.timestamp,
+        fromMe: msg.fromMe,
+        hasMedia: msg.hasMedia,
+        type: msg.type,
+      }));
+    } catch (error) {
+      logger.error('Failed to get chat messages:', error);
       return [];
     }
   },
@@ -402,8 +462,14 @@ export const whatsappService = {
     }
 
     // ========== HANDLE FILE/MEDIA UPLOADS ==========
-    if (msg.hasMedia && (session.state === 'AUTHENTICATED' || session.state === 'UPLOADING_CHECKLIST')) {
-      return await this.handleFileUpload(mobile, msg, session);
+    if (msg.hasMedia) {
+      // If already in a checklist upload session, use checklist flow
+      if (session.state === 'UPLOADING_CHECKLIST' && session.clientId) {
+        return await this.handleFileUpload(mobile, msg, session);
+      }
+
+      // Otherwise, DIRECT SAVE to file manager — no menu needed!
+      return await this.handleDirectFileUpload(mobile, msg);
     }
 
     let response: any;
@@ -834,6 +900,107 @@ export const whatsappService = {
     } catch (err: any) {
       logger.error('Error handling WhatsApp file upload:', err);
       return `❌ Error saving your document: ${err.message}\n\nPlease try again or contact your accountant.`;
+    }
+  },
+
+  /**
+   * Handle DIRECT file upload — client sends a file without going through menu
+   * Auto-saves to their folder in file manager
+   */
+  async handleDirectFileUpload(mobile: string, msg: any): Promise<string> {
+    try {
+      // 1. Find the client by mobile number
+      const formattedMobile = mobile.startsWith('91') ? `+${mobile}` : mobile;
+      const users = await userRepository.findAllByMobile(formattedMobile);
+
+      if (users.length === 0) {
+        return `❌ Your number is not registered. Please contact your accountant.`;
+      }
+
+      // Get the client(s) for this user
+      const userIds = users.map(u => u.id);
+      const clients = await clientRepository.findAllByUserIds(userIds);
+
+      if (clients.length === 0) {
+        return `❌ No client account found for your number.`;
+      }
+
+      // Use the first client (or the only one)
+      const clientRecord = clients[0];
+      const clientCode = clientRecord.code;
+      const clientName = (clientRecord as any).user?.name || clientCode;
+
+      // 2. Download the media
+      const media = await msg.downloadMedia();
+      if (!media) {
+        return `❌ Could not download the file. Please try again.`;
+      }
+
+      const buffer = Buffer.from(media.data, 'base64');
+      const mimetype = media.mimetype || 'application/octet-stream';
+      const originalName = msg.body || media.filename || `document_${Date.now()}`;
+      const ext = mimetype.split('/')[1]?.split(';')[0] || 'bin';
+      const fileName = originalName.includes('.') ? originalName : `${originalName}.${ext}`;
+
+      // 3. Ensure folder structure: root → WhatsApp Uploads
+      const { Folder, File: FileModel } = await import('../models');
+
+      let rootFolder = await folderRepository.findRootByClientId(clientRecord.id);
+      if (!rootFolder) {
+        rootFolder = await Folder.create({
+          name: clientCode,
+          slug: clientCode.toLowerCase(),
+          type: 'root',
+          clientId: clientRecord.id,
+          s3Prefix: `clients/${clientCode}/`,
+        });
+      }
+
+      // Find or create "WhatsApp Uploads" folder
+      const waFolderSlug = 'whatsapp-uploads';
+      let waFolder = await Folder.findOne({
+        where: { clientId: clientRecord.id, parentId: rootFolder.id, slug: waFolderSlug },
+      });
+      if (!waFolder) {
+        waFolder = await Folder.create({
+          name: 'WhatsApp Uploads',
+          slug: waFolderSlug,
+          type: 'documents' as any,
+          clientId: clientRecord.id,
+          parentId: rootFolder.id,
+          s3Prefix: `clients/${clientCode}/whatsapp-uploads/`,
+        });
+      }
+
+      // 4. Upload to S3
+      const timestamp = Date.now();
+      const s3Key = `clients/${clientCode}/whatsapp-uploads/${timestamp}_${fileName}`;
+
+      await s3Helpers.uploadFile(s3Key, buffer, mimetype, {
+        clientId: clientRecord.id,
+        uploadedVia: 'whatsapp-direct',
+        originalName: fileName,
+      });
+
+      // 5. Create File record in DB
+      await FileModel.create({
+        fileName: `${timestamp}_${fileName}`,
+        originalName: fileName,
+        s3Path: s3Key,
+        mimeType: mimetype,
+        size: buffer.length,
+        folderId: waFolder.id,
+        uploadedBy: users[0].id,
+      });
+
+      logger.info(`📁 Direct WhatsApp upload: ${fileName} from ${clientName} → ${s3Key}`);
+
+      // 6. Send short confirmation
+      return `✅ *${fileName}* received and saved.\n📁 _Stored in your documents._`;
+
+    } catch (err: any) {
+      logger.error('Error handling direct WhatsApp file upload:', err);
+      return `❌ Error saving your document. Please try again.`;
     }
   },
 
