@@ -1,5 +1,5 @@
-
 import type { Client, LocalAuth, MessageMedia as MessageMediaType } from 'whatsapp-web.js';
+import { Invoice, Payment, Organization, WhatsAppLog } from '../models';
 import axios from 'axios';
 import * as qrcode from 'qrcode-terminal';
 import * as fs from 'fs';
@@ -1235,4 +1235,171 @@ export const whatsappService = {
     // Re-initialize to get a new QR code
     this.initialize();
   },
+
+  /**
+   * Helper: Format Phone
+   */
+  _formatPhone(phone: string): string {
+    let formatted = phone.replace(/[- ]/g, '');
+    if (!formatted.startsWith('+')) {
+      if (formatted.startsWith('91')) {
+        formatted = '+' + formatted;
+      } else {
+        formatted = '+91' + formatted.slice(-10);
+      }
+    }
+    return formatted;
+  },
+
+  /**
+   * Send Invoice PDF Notification via WhatsApp
+   */
+  async sendInvoice(invoice: Invoice, org: Organization): Promise<boolean> {
+    if (!invoice.client || !invoice.client.whatsappNumber) {
+      logger.warn(`Client has no WhatsApp number for Invoice ${invoice.id}`);
+      return false;
+    }
+
+    const dueDateStr = new Date(invoice.dueDate).toLocaleDateString();
+    const link = `https://app.accudocs.in/invoices/${invoice.id}/download`;
+
+    const messageBody = `Hi ${(invoice.client as any).contactPersonName || (invoice.client as any).contactPerson || invoice.client.name},
+
+Your invoice ${invoice.invoiceNumber} has been issued.
+
+📄 Details:
+Amount: ₹${Number(invoice.grandTotal).toFixed(2)}
+Due Date: ${dueDateStr}
+Service: ${invoice.serviceCategory}
+
+View Invoice: ${link}
+
+Payment Methods:
+• Bank Transfer
+• Cheque
+• UPI
+
+Questions? Reply to this message.
+
+${org.name}`;
+
+    try {
+      await this.sendMessage(invoice.client.whatsappNumber, messageBody);
+
+      await WhatsAppLog.create({
+        organizationId: org.id,
+        clientId: invoice.client.id,
+        entityType: 'INVOICE',
+        entityId: invoice.id,
+        messageType: 'INVOICE_ISSUED',
+        phoneNumber: invoice.client.whatsappNumber,
+        messageText: messageBody,
+        status: 'SENT',
+        sentAt: new Date()
+      });
+      return true;
+    } catch (e: any) {
+      await WhatsAppLog.create({
+        organizationId: org.id,
+        clientId: invoice.client.id,
+        entityType: 'INVOICE',
+        entityId: invoice.id,
+        messageType: 'INVOICE_ISSUED',
+        phoneNumber: invoice.client.whatsappNumber,
+        messageText: messageBody,
+        status: 'FAILED',
+        errorMessage: e.message,
+        sentAt: new Date()
+      });
+      return false;
+    }
+  },
+
+  /**
+   * Send Overdue Reminder
+   */
+  async sendOverdueReminder(invoice: Invoice, org: Organization, daysOverdue: number): Promise<boolean> {
+    if (!invoice.client || !invoice.client.whatsappNumber) return false;
+    const link = `https://app.accudocs.in/invoices/${invoice.id}/download`;
+    let messageBody = '';
+
+    if (daysOverdue === 1) {
+      messageBody = `⚠️ Reminder: Invoice Due Tomorrow
+      
+Invoice: ${invoice.invoiceNumber}
+Amount: ₹${Number(invoice.outstandingAmount).toFixed(2)}
+Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}
+
+Please arrange payment at your earliest.
+View Invoice: ${link}
+
+${org.name}`;
+    } else if (daysOverdue === 7) {
+      messageBody = `🔴 URGENT: Invoice Overdue by 7 Days
+
+Invoice: ${invoice.invoiceNumber}
+Amount Outstanding: ₹${Number(invoice.outstandingAmount).toFixed(2)}
+Overdue Since: ${new Date(invoice.dueDate).toLocaleDateString()}
+
+Immediate payment required. Contact us if you need assistance.
+
+${link}
+
+${org.name}`;
+    } else {
+      messageBody = `🔴 CRITICAL: Invoice Overdue by ${daysOverdue} Days
+
+Invoice: ${invoice.invoiceNumber}
+Amount: ₹${Number(invoice.outstandingAmount).toFixed(2)}
+Original Due: ${new Date(invoice.dueDate).toLocaleDateString()}
+
+IMMEDIATE PAYMENT REQUIRED`;
+    }
+
+    try {
+      await this.sendMessage(invoice.client.whatsappNumber, messageBody);
+      await WhatsAppLog.create({
+        organizationId: org.id,
+        clientId: invoice.client.id,
+        entityType: 'INVOICE',
+        entityId: invoice.id,
+        messageType: 'OVERDUE_REMINDER',
+        phoneNumber: invoice.client.whatsappNumber,
+        messageText: messageBody,
+        status: 'SENT',
+        sentAt: new Date()
+      });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  /**
+   * Send Payment Received Notification
+   */
+  async sendPaymentReceived(payment: Payment, invoice: Invoice, org: Organization): Promise<boolean> {
+    if (!invoice.client || !invoice.client.whatsappNumber) return false;
+
+    const statusMsg = Number(invoice.outstandingAmount) === 0
+      ? 'Your invoice has been fully paid. Thank you!'
+      : `Partial payment received. Outstanding: ₹${Number(invoice.outstandingAmount).toFixed(2)}`;
+
+    const messageBody = `✅ Payment Received
+
+Invoice: ${invoice.invoiceNumber}
+Amount Received: ₹${Number(payment.amount).toFixed(2)}
+Payment Date: ${new Date(payment.paymentDate).toLocaleDateString()}
+
+${statusMsg}
+
+${org.name}`;
+
+    try {
+      await this.sendMessage(invoice.client.whatsappNumber, messageBody);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 };

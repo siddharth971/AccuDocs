@@ -14,7 +14,7 @@ export interface AppModule {
 
 export type HubId =
   | 'core' | 'compliance' | 'work'
-  | 'clients' | 'firm' | 'settings';
+  | 'clients' | 'firm' | 'settings' | 'billing';
 
 export interface Hub {
   id: HubId;
@@ -33,6 +33,7 @@ export const HUBS: Hub[] = [
   { id: 'compliance', label: 'Compliance', icon: '⚖️', color: '#3A9E7A', desc: 'Deadlines & filings' },
   { id: 'work', label: 'Work', icon: '✅', color: '#3A7FBF', desc: 'Tasks & productivity' },
   { id: 'clients', label: 'Clients', icon: '👥', color: '#8B5FBF', desc: 'CRM & relationships' },
+  { id: 'billing', label: 'Billing & Rev', icon: '💰', color: '#10B981', desc: 'Invoices & collections' },
   { id: 'firm', label: 'Firm Ops', icon: '🏢', color: '#7A8898', desc: 'Staff & operations' },
   { id: 'settings', label: 'Settings', icon: '⚙️', color: '#7A8898', desc: 'Configuration' },
 ];
@@ -46,6 +47,9 @@ export const MODULE_REGISTRY: AppModule[] = [
   // ── CORE ──
   { id: 'dashboard', hub: 'core', label: 'Dashboard', icon: '⊞', desc: 'Today\'s office overview', status: 'live', badge: null, route: '/dashboard', pinned: true },
   { id: 'documents_all', hub: 'core', label: 'Documents', icon: '📁', desc: 'Global document vault', status: 'live', badge: null, route: '/documents', pinned: true },
+
+  // ── BILLING ──
+  { id: 'billing_invoices', hub: 'billing', label: 'Revenue & Invoices', icon: '🧾', desc: 'CA Invoicing & prediction', status: 'live', badge: 12, route: '/billing/invoices', pinned: true },
 
   // ── COMPLIANCE ──
   { id: 'calendar', hub: 'compliance', label: 'Compliance Calendar', icon: '📅', desc: 'All filing deadlines', status: 'live', badge: 3, route: '/compliance/calendar', pinned: true },

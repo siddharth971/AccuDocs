@@ -1,10 +1,12 @@
 import { DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from '../config/database.config';
 
-export type UserRole = 'admin' | 'client';
+export type UserRole = 'super_admin' | 'org_admin' | 'branch_manager' | 'invoicing_officer' | 'finance_manager' | 'accountant' | 'viewer' | 'admin' | 'client';
 
 export interface UserAttributes {
   id: string;
+  organizationId?: string;
+  branchId?: string;
   name: string;
   email?: string;
   mobile: string;
@@ -22,6 +24,8 @@ export interface UserCreationAttributes extends Optional<UserAttributes, 'id' | 
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   declare public id: string;
+  declare public organizationId?: string;
+  declare public branchId?: string;
   declare public name: string;
   declare public email: string;
   declare public mobile: string;
@@ -54,6 +58,24 @@ User.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
+    organizationId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'organizations',
+        key: 'id',
+      },
+      field: 'organization_id',
+    },
+    branchId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      references: {
+        model: 'branches',
+        key: 'id',
+      },
+      field: 'branch_id',
+    },
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -81,7 +103,7 @@ User.init(
       field: 'mfa_secret',
     },
     role: {
-      type: DataTypes.ENUM('admin', 'client'),
+      type: DataTypes.ENUM('super_admin', 'org_admin', 'branch_manager', 'invoicing_officer', 'finance_manager', 'accountant', 'viewer', 'admin', 'client'),
       allowNull: false,
       defaultValue: 'client',
     },
@@ -107,6 +129,8 @@ User.init(
       { fields: ['email'], unique: true, where: { deleted_at: null } }, // Partial index for soft delete
       { fields: ['role'] },
       { fields: ['is_active'] },
+      { fields: ['organization_id'] },
+      { fields: ['branch_id'] },
     ],
   }
 );

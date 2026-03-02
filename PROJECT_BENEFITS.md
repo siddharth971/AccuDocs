@@ -12,11 +12,11 @@
 - **AccuDocs Solution**: We enforce a strict **Client ➔ Year ➔ Category** folder structure.
 - **Benefit**: Every file has a permanent home. Retrieval time drops from **10 minutes to 5 seconds**.
 
-**2. Kills the "Download-Upload" Cycle (WhatsApp Automation)**
+**2. Kills the "Unpaid" Cycle (Automated Billing & Reminders)**
 
-- **Problem**: To send a file on WhatsApp, staff has to: _Open Folder ➔ Find File ➔ Copy to Desktop ➔ Open Web.WhatsApp ➔ Search Contact ➔ Drag & Drop ➔ Send_. This is 7 tedious steps.
-- **AccuDocs Solution**: A single right-click **"Send to WhatsApp"** button inside the software.
-- **Benefit**: Document sharing becomes instant. Staff can handle **3x more client requests** per day.
+- **Problem**: Staff forgets to bill for ad-hoc services, and chasing clients for overdue invoices via phone calls strains relationships.
+- **AccuDocs Solution**: Automated recurring invoices and scheduled WhatsApp reminders (D+1, D+7) that run silently in the background via Cron Jobs.
+- **Benefit**: Cash flow becomes predictable. DSO (Days Sales Outstanding) plummets as clients pay faster due to persistent digital nudges.
 
 **3. Stops Data Leaks (Security)**
 
@@ -24,11 +24,11 @@
 - **AccuDocs Solution**: The WhatsApp integration works from the _Server_. The file never touches the employee's personal phone.
 - **Benefit**: You maintain **100% control and ownership** of your client data.
 
-**4. Prevents "Version Confusion" (Accuracy)**
+**4. Eliminates "Tax Math" Errors (GST Engine)**
 
-- **Problem**: Folders are full of `Final.pdf`, `Final_New.pdf`, `Final_Print.pdf`. No one knows which is the correct one.
-- **AccuDocs Solution**: The system shows the 'Last Modified' timestamp clearly and allows (in future) version tagging.
-- **Benefit**: You never send the wrong/old draft to a government agency or client.
+- **Problem**: Calculating Interstate vs Intrastate GST, managing credit notes, and allocating partial advance payments is error-prone.
+- **AccuDocs Solution**: An integrated tax engine that automatically splits IGST/CGST/SGST and seamlessly handles FIFO advance allocations.
+- **Benefit**: 100% tax compliant billing. You never under-bill or face compliance penalties for incorrect invoicing.
 
 ---
 
@@ -46,9 +46,13 @@
 
 - Since the system is Cloud/Server based, you (the Boss) can check any client file from your home or while traveling. You are not tied to the office server room functionality.
 
-**4. Audit-Ready Organization**
+**4. Data-Driven Insights (Predictive Intelligence)**
 
-- During tax season or audits, having every single document perfectly filed by Year and Category saves days of panic and stress.
+- By scoring clients on their payment promptness, your firm can proactively demand advances from "High-Risk" clients and reward "Low-Risk" loyalists.
+
+**5. Audit-Ready Operations**
+
+- During tax season or compliance audits, having every single document, invoice, and payment tracked via an immutable server-side Audit Log saves days of panic and stress.
 
 ---
 

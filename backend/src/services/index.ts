@@ -8,3 +8,4 @@ export { folderInitializerService } from './folder-initializer.service';
 export { checklistService } from './checklist.service';
 export { complianceService } from './compliance.service';
 export { taskService } from './task.service';
+export { cronService } from './cron.service';

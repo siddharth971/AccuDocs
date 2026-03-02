@@ -166,6 +166,11 @@ export const routes: Routes = [
         path: 'demo',
         loadComponent: () => import('./features/demo/demo.component').then(m => m.DemoComponent),
       },
+      // BILLING AND INVOICING
+      {
+        path: 'billing',
+        loadChildren: () => import('./features/billing/billing.routes').then((m) => m.BILLING_ROUTES),
+      }
     ]
   },
   {

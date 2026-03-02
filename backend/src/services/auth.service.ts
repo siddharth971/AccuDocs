@@ -118,7 +118,7 @@ export const authService = {
       if (client.clients.length > 0) {
         // Client exists, just get the user
         const clientData = client.clients[0];
-        user = await userRepository.findById(clientData.userId);
+        user = await userRepository.findById(clientData.userId as string);
       }
 
       if (!user) {

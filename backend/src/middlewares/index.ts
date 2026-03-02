@@ -4,3 +4,4 @@ export { validate, validateBody, validateQuery, validateParams } from './validat
 export { errorHandler, notFoundHandler, asyncHandler } from './error.middleware';
 export { apiLimiter, authLimiter, otpLimiter, uploadLimiter } from './rateLimit.middleware';
 export { uploadSingle, uploadMultiple, getFileExtension, validateFileSize } from './upload.middleware';
+export { auditLogger } from './audit.middleware';

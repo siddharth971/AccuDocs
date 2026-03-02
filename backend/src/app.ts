@@ -6,7 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerJsdoc from 'swagger-jsdoc';
 import { config } from './config';
 import routes from './routes';
-import { errorHandler, notFoundHandler, apiLimiter } from './middlewares';
+import { errorHandler, notFoundHandler, apiLimiter, auditLogger } from './middlewares';
 import { logger } from './utils/logger';
 
 
@@ -137,6 +137,9 @@ export const createApp = (): Application => {
     customCss: '.swagger-ui .topbar { display: none }',
     customSiteTitle: 'AccuDocs API Documentation',
   }));
+
+  // Audit Logger (Tracks mutating operations globally if valid auth)
+  app.use(auditLogger());
 
   // API routes
   app.use(`/api/${config.apiVersion}`, routes);

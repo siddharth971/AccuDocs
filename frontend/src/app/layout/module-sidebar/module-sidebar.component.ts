@@ -2,6 +2,7 @@ import { Component, inject, ChangeDetectionStrategy, computed } from '@angular/c
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
+import { AuthService } from '../../core/services/auth.service';
 import {
   getHubModules,
   groupModulesByStatus,
@@ -274,11 +275,11 @@ import {
             font-size: 12px;
           "
         >
-          CA
+          {{ authService.currentUser()?.name?.charAt(0) || 'CA' }}
         </div>
         <div style="flex: 1; min-width: 0;">
-          <div style="font-weight: 600; font-size: 13px; color: var(--color-text);">
-            Firm Name
+          <div style="font-weight: 600; font-size: 13px; color: var(--color-text);" class="truncate">
+            {{ authService.currentUser()?.name || 'Firm Name' }}
           </div>
           <div
             style="
@@ -288,10 +289,11 @@ import {
               align-items: center;
               gap: 4px;
               margin-top: 2px;
+              text-transform: capitalize;
             "
           >
             <span style="width: 6px; height: 6px; border-radius: 50%; background: #3D9E6A;"></span>
-            WA Connected
+            {{ authService.currentUser()?.role || 'Admin' }}
           </div>
         </div>
       </div>
@@ -301,6 +303,7 @@ import {
 })
 export class ModuleSidebarComponent {
   nav = inject(NavigationService);
+  authService = inject(AuthService);
 
   hubData = this.nav.activeHubData;
 

@@ -6,7 +6,7 @@ export class ClientMapper {
     const clientOrError = Client.create({
       code: raw.code,
       name: raw.name,
-      userId: raw.userId,
+      userId: raw.userId as string,
       status: raw.status as any,
       metadata: raw.metadata,
     }, raw.id);

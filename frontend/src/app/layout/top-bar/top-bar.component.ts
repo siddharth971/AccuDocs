@@ -1,7 +1,8 @@
-import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NavigationService } from '../../core/navigation.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-top-bar',
@@ -139,42 +140,105 @@ import { NavigationService } from '../../core/navigation.service';
           </div>
         </button>
 
-        <!-- User profile -->
-        <button
-          style="
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: transparent;
-            border: 1px solid var(--color-border);
-            border-radius: 20px;
-            padding: 2px 12px 2px 2px;
-            cursor: pointer;
-            transition: all 0.2s;
-          "
-          class="hover:border-gold-500"
-        >
-          <div
+        <!-- User profile container -->
+        <div style="position: relative;">
+          <!-- User profile button -->
+          <button
+            (click)="userMenuOpen.set(!userMenuOpen())"
             style="
-              width: 28px;
-              height: 28px;
-              border-radius: 50%;
-              background: var(--color-gold);
-              color: var(--color-bg);
               display: flex;
               align-items: center;
-              justify-content: center;
-              font-weight: 700;
-              font-size: 11px;
-              flex-shrink: 0;
+              gap: 8px;
+              background: transparent;
+              border: 1px solid var(--color-border);
+              border-radius: 20px;
+              padding: 2px 12px 2px 2px;
+              cursor: pointer;
+              transition: all 0.2s;
             "
+            class="hover:border-gold-500"
           >
-            CA
-          </div>
-          <span style="font-size: 12px; color: var(--color-text); font-weight: 500;">
-            You
-          </span>
-        </button>
+            <div
+              style="
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: var(--color-gold);
+                color: var(--color-bg);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 11px;
+                flex-shrink: 0;
+              "
+            >
+              {{ authService.currentUser()?.name?.charAt(0) || 'CA' }}
+            </div>
+            <span style="font-size: 12px; color: var(--color-text); font-weight: 500;">
+              {{ authService.currentUser()?.name || 'You' }}
+            </span>
+          </button>
+
+          <!-- Dropdown Panel -->
+          @if (userMenuOpen()) {
+            <div
+              style="
+                position: absolute;
+                top: calc(100% + 8px);
+                right: 0;
+                width: 200px;
+                background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                border-radius: 8px;
+                box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+                z-index: 50;
+                overflow: hidden;
+              "
+            >
+              <div style="padding: 12px; border-bottom: 1px solid var(--color-border);">
+                <div style="font-weight: 600; font-size: 13px; color: var(--color-text);">
+                   {{ authService.currentUser()?.name || 'User' }}
+                </div>
+                <div style="font-size: 11px; color: var(--color-text-sub); margin-top: 2px; text-transform: capitalize;">
+                  {{ authService.currentUser()?.role || 'Admin' }}
+                </div>
+              </div>
+              <div style="padding: 4px;">
+                <button
+                  (click)="logout()"
+                  style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 8px 12px;
+                    border: none;
+                    background: transparent;
+                    color: var(--color-red);
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: background 0.2s;
+                  "
+                  class="hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  <span>🚪</span> Logout
+                </button>
+              </div>
+            </div>
+          }
+          
+          <!-- Backdrop -->
+          @if (userMenuOpen()) {
+            <div 
+              (click)="userMenuOpen.set(false)" 
+              style="position: fixed; inset: 0; z-index: 40;"
+            ></div>
+          }
+        </div>
       </div>
     </header>
   `,
@@ -182,4 +246,11 @@ import { NavigationService } from '../../core/navigation.service';
 })
 export class TopBarComponent {
   nav = inject(NavigationService);
+  authService = inject(AuthService);
+  userMenuOpen = signal(false);
+
+  logout() {
+    this.userMenuOpen.set(false);
+    this.authService.logout();
+  }
 }

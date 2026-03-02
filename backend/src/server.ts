@@ -4,7 +4,7 @@ import { createApp } from './app';
 import { config, validateConfig, connectDatabase, connectRedis, disconnectDatabase, disconnectRedis } from './config';
 import { initializeAssociations } from './models';
 import { logger } from './utils/logger';
-import { authService, whatsappService, checklistService, complianceService } from './services';
+import { authService, whatsappService, checklistService, complianceService, cronService } from './services';
 import { socketService } from './services/socket.service';
 import { scheduler } from './config/scheduler';
 
@@ -76,6 +76,9 @@ const startServer = async (): Promise<void> => {
 
       // Start reminder scheduler
       scheduler.start();
+
+      // Start all advanced CA cron jobs
+      cronService.startAllJobs();
     });
 
     // Graceful shutdown handlers

@@ -2,10 +2,12 @@ import jwt, { SignOptions, JwtPayload } from 'jsonwebtoken';
 import { config } from '../config/env.config';
 import { logger } from './logger';
 
+import { UserRole } from '../models';
+
 export interface TokenPayload {
   userId: string;
   mobile: string;
-  role: 'admin' | 'client';
+  role: UserRole;
 }
 
 export interface DecodedToken extends JwtPayload, TokenPayload { }

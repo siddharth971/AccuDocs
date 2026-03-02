@@ -8,35 +8,49 @@
 
 ## 🎯 Executive Summary
 
-**AccuDocs** is a production-ready, cloud-based document management system designed specifically for chartered accountants, tax consultants, lawyers, and professional service firms. It streamlines document organization, client management, and secure file sharing with **WhatsApp automation**, eliminating manual file handling and reducing document retrieval time from minutes to seconds.
+**AccuDocs** is a production-ready, cloud-based Revenue Management & Document System designed specifically for Chartered Accountants (CA) and tax consultant firms in India. It streamlines GST-compliant invoicing, recurring billing, risk-predictive collections, and secure document sharing with **WhatsApp automation**. AccuDocs is built to replace manual Tally billing and Excel trackers, reducing collection times and scaling smoothly to 10,000+ firms.
 
 ### Core Value Proposition
 
-- **Centralized Cloud Hub** for all client documents
-- **WhatsApp Integration** for instant document delivery
-- **Enforced Organization** with Client → Year → Category structure
-- **Enterprise-Grade Security** with role-based access control
-- **Audit-Ready Compliance** with complete audit logs
+- **Automated Invoicing & GST Engine** computing state-specific taxes seamlessly
+- **Intelligent Recurring Billing** for monthly/yearly retainers
+- **Predictive Risk Scoring** for proactive payment collection
+- **WhatsApp Engine** for instant document and reminder delivery
+- **Centralized Cloud Hub** for enforcing Client → Year → Category structure
+- **Enterprise-Grade Security** with strict RBAC and immutable audit logs
 
 ---
 
 ## 🚀 Key Features
 
-### 1. **WhatsApp Authentication & Messaging**
+### 1. **Revenue Management & GST Calculation**
 
-- ✅ Login via OTP sent securely to WhatsApp (No Twilio costs!)
-- ✅ WhatsApp Web.js integration with Puppeteer automation
-- ✅ One-click document delivery to clients via WhatsApp
-- ✅ Real-time notifications and status updates
-- ✅ Server-side WhatsApp integration (no personal phone exposure)
+- ✅ State-aware automated GST (IGST/CGST/SGST) splits
+- ✅ Pro-rata credit note generation and adjustments
+- ✅ FIFO-based advance payment auto-allocations
+- ✅ Professional PDF generation via PDFKit
+
+### 2. **WhatsApp Automation & Reminders**
+
+- ✅ Automated Invoice PDF delivery via WhatsApp
+- ✅ Scheduled overdue payment reminders (1-day, 7-day, critical)
+- ✅ Automated "Payment Received" acknowledgement receipts
+- ✅ WhatsApp Web.js automation for document delivery
 
 ### 2. **Admin Dashboard**
 
-- 📊 Comprehensive client management interface
-- 📁 Folder and document organization system
-- 👥 User and role management
-- 📈 Real-time analytics and statistics
-- 🔍 Advanced search and filtering capabilities
+### 3. **Intelligence & Predictive Collections**
+
+- 📊 **Risk Scoring Logic (0-100)**: Grades clients based on historical delays
+- 📉 Real-time revenue pipeline forecasting via scheduled billing patterns
+- ⚠️ Advance expiry warnings and predictive alerts for missed deadlines
+- 📈 Comprehensive organizational finance dashboards
+
+### 4. **Automated Recurring Billing**
+
+- 🔄 Auto-creation of standard retainer invoices (Monthly/Quarterly/Yearly)
+- ⚙️ Intelligent state-machine transitions (Draft → Issued → Overdue)
+- ⏰ Node-cron triggers running background tasks for collection queues
 
 ### 3. **Secure File Storage**
 
@@ -55,11 +69,10 @@
 
 ### 5. **Audit & Compliance**
 
-- 📝 Complete audit logs for every action (create, read, update, delete)
-- 🔍 User activity tracking with timestamps
-- 📊 Compliance-ready reports
-- ✅ GDPR and data privacy considerations
-- 🔐 Encryption at rest and in transit
+- 📝 Immutable audit logs middleware covering all mutating events
+- 🔍 Exact timeline tracking for entity creation/updates
+- ✅ Adherence to standard Indian tax compliance mandates
+- 🔐 Complete Database row-level isolation per firm (Organization ID logic)
 
 ### 6. **Client Management (CRM)**
 
@@ -97,17 +110,17 @@
 | **Language**         | TypeScript          | Type-safe development                     |
 | **Database**         | PostgreSQL / SQLite | Production: PostgreSQL, Local: SQLite     |
 | **ORM**              | Sequelize           | SQL query builder with TypeScript support |
-| **WhatsApp**         | whatsapp-web.js     | Browser automation with Puppeteer         |
+| **WhatsApp Engine**  | WhatsApp-Web/Twilio | Omnichannel message delivery systems      |
 | **Storage**          | AWS S3              | Cloud object storage with CDN support     |
+| **PDF Engine**       | PDFKit              | On-the-fly highly structured invoice gen  |
 | **Cache**            | Redis               | In-memory data store for sessions         |
 | **Validation**       | Zod                 | Runtime type validation                   |
 | **Security**         | bcryptjs, JWT       | Password hashing and authentication       |
 | **API Docs**         | Swagger/OpenAPI     | Interactive API documentation             |
-| **Logging**          | Winston             | Structured logging with daily rotation    |
-| **Cron Jobs**        | node-cron           | Scheduled task automation                 |
+| **Logging**          | Winston + Custom ID | Immutable DB audit trails + log rotation  |
+| **Cron Jobs**        | node-cron           | Master daemon for automated pipelines     |
 | **Real-time**        | Socket.io           | WebSocket communication                   |
-| **Compression**      | gzip/brotli         | Response compression                      |
-| **Rate Limiting**    | express-rate-limit  | API rate limiting                         |
+| **Rate Limiting**    | express-rate-limit  | Endpoint DDOS resilience / Throttling     |
 | **Security Headers** | Helmet              | HTTP security headers                     |
 
 ### Frontend Stack
@@ -258,17 +271,17 @@ AccuDocs/
 - **After**: Clear version history with timestamps
 - **Impact**: Never send wrong/outdated documents to clients
 
-### 5. **Audit Readiness (Compliance)**
+### 5. **Predictive Payments (Cash Flow)**
 
-- **Automated audit trails** for every action
-- **Compliance-ready reports** for tax season
+- **Before**: Unpredictable cash collections and high unbilled ledgers
+- **After**: AI scoring uncovers bad payment behaviors automatically
+- **Impact**: Massive reductions in Days Sales Outstanding (DSO)
+
+### 6. **Audit Readiness (Compliance)**
+
+- **Automated audit trails** for every action via Immutable Middlewares
+- **Compliance-ready reports** enforcing organizational bounds
 - **Eliminates days of panic** during audits
-
-### 6. **Remote Work Enablement**
-
-- Cloud-based architecture allows work from anywhere
-- No dependency on office server infrastructure
-- Disaster recovery and business continuity built-in
 
 ---
 

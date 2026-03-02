@@ -1,0 +1,147 @@
+name: Production Deployment & QA Testing Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: "18.x"
+  POSTGRES_VERSION: "13"
+  REGISTRY: ghcr.io
+
+jobs:
+  test-and-lint:
+    name: ✅ Run Tests & Security Scans
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: accudocs_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Dependencies
+        run: |
+          cd backend && npm ci
+          cd ../frontend && npm ci
+
+      - name: Security Audit (npm audit)
+        run: |
+          cd backend && npm audit --audit-level=high
+          cd ../frontend && npm audit --audit-level=high
+
+      - name: Backend Code Quality & Linting
+        run: cd backend && npm run lint
+
+      - name: Run Backend Unit Tests (Jest)
+        run: cd backend && npm run test -- --coverage
+        env:
+          DATABASE_URL: postgres://test_user:test_password@localhost:5432/accudocs_test
+          JWT_SECRET: test_secret_key
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+
+      - name: Run Frontend Unit Tests
+        run: cd frontend && npm run test:unit
+
+  e2e-tests:
+    name: 🎭 Playwright E2E Tests
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          cd frontend && npm ci
+          npx playwright install --with-deps
+
+      - name: Run E2E Tests
+        run: cd frontend && npx playwright test
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
+  performance-tests:
+    name: ⚡ K6 Load Testing
+    needs: test-and-lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup K6
+        uses: grafana/setup-k6-action@v1
+      - name: Run Load Test
+        run: k6 run scripts/load_test.js
+
+  docker-build-push:
+    name: 🐳 Build & Push Docker Images
+    needs: [test-and-lint, e2e-tests]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Backend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/accudocs-backend:latest
+
+      - name: Build & Push Frontend
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}/accudocs-frontend:latest
