@@ -8,6 +8,7 @@ import {
   AppModule,
   findModule,
   getDefaultPins,
+  getHubModules,
 } from './module-registry';
 
 @Injectable({ providedIn: 'root' })
@@ -81,12 +82,25 @@ export class NavigationService {
   }
 
   /**
-   * Set active hub (clears active module selection)
+   * Set active hub and navigate to its first module
    */
   setActiveHub(hubId: HubId): void {
     this.activeHub.set(hubId);
-    this.activeModule.set(null);
-    this.router.navigate([`/hub/${hubId}`]);
+
+    const hubModules = getHubModules(hubId);
+    if (hubModules.length > 0) {
+      const firstModule = hubModules[0];
+      this.activeModule.set(firstModule.id);
+
+      if (firstModule.status !== 'soon') {
+        this.router.navigate([firstModule.route]);
+      } else {
+        this.router.navigate(['/coming-soon'], { queryParams: { module: firstModule.id } });
+      }
+    } else {
+      this.activeModule.set(null);
+      this.router.navigate([`/hub/${hubId}`]);
+    }
   }
 
   /**
@@ -191,13 +205,9 @@ export class NavigationService {
 
   /**
    * Get default (initial) view based on current hub
-   * If hub is 'core', return the dashboard module
-   * Otherwise return null to show hub overview
    */
   getDefaultModuleForHub(hubId: HubId): string | null {
-    if (hubId === 'core') {
-      return 'dashboard';
-    }
-    return null;
+    const hubModules = getHubModules(hubId);
+    return hubModules.length > 0 ? hubModules[0].id : null;
   }
 }

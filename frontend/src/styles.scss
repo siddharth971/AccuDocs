@@ -9,14 +9,14 @@
 
 :root {
   // Background & Surface layers
-  --color-bg: #0A0C10;
-  --color-bg-raised: #0F1318;
-  --color-surface: #141920;
-  --color-surface-hover: #1A2130;
+  --color-bg: #F8FAFC;
+  --color-bg-raised: #F1F5F9;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F1F5F9;
 
   // Borders & Dividers
-  --color-border: #1E2733;
-  --color-border-mid: #263040;
+  --color-border: #E2E8F0;
+  --color-border-mid: #CBD5E1;
 
   // Accent colors (hub specific)
   --color-gold: #C9943A;
@@ -24,9 +24,9 @@
   --color-gold-faint: rgba(201, 148, 58, 0.08);
 
   // Text colors
-  --color-text: #D8E0EA;
-  --color-text-sub: #7A8898;
-  --color-text-dim: #3D4A58;
+  --color-text: #0F172A;
+  --color-text-sub: #64748B;
+  --color-text-dim: #94A3B8;
 
   // Semantic colors
   --color-green: #3D9E6A;

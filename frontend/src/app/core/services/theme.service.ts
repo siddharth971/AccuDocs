@@ -18,9 +18,9 @@ export class ThemeService {
     if (savedTheme) {
       this.darkModeSignal.set(savedTheme === 'dark');
     } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      this.darkModeSignal.set(prefersDark);
+      // Default strictly to light mode always
+      this.darkModeSignal.set(false);
+      localStorage.setItem('theme', 'light');
     }
   }
 
