@@ -85,7 +85,7 @@ import { MatSelectModule } from '@angular/material/select';
     })
   ],
   template: `
-    <div class="h-full flex flex-col">
+    <div class="p-6 h-full flex flex-col">
       <!-- Loading State -->
       @if (isLoading()) {
         <div class="py-20">

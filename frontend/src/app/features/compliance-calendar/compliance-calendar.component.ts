@@ -61,7 +61,7 @@ import { DeadlineDetailModalComponent } from './components/deadline-detail-modal
     }),
   ],
   template: `
-    <div class="animate-page-enter">
+    <div class="p-6 animate-page-enter">
       <!-- Page Header -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>

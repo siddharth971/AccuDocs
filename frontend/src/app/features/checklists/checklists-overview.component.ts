@@ -26,7 +26,7 @@ import { ClientService, Client } from '@core/services/client.service';
   standalone: true,
   imports: [CommonModule, FormsModule, NgIconComponent],
   template: `
-    <div class="p-6 lg:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div class="p-6 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
       <!-- Page Header -->
       <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

@@ -27,7 +27,7 @@ import { TasksWidgetComponent } from './widgets/tasks-widget.component';
     TasksWidgetComponent
   ],
   template: `
-    <div class="animate-page-enter">
+    <div class="animate-page-enter p-6">
 
       <app-welcome-header [userName]="authService.currentUser()?.name"></app-welcome-header>
 

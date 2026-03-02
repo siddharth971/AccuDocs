@@ -95,7 +95,7 @@ import { heroClipboardDocumentCheckSolid, heroCalendarSolid } from '@ng-icons/he
     })
   ],
   template: `
-    <div class="h-full flex flex-col animate-in fade-in duration-500">
+    <div class="p-6 h-full flex flex-col animate-in fade-in duration-500">
       <input
         #fileInput
         type="file"
